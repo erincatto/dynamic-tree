@@ -1,0 +1,132 @@
+graph
+{
+2 -- 19
+2 -- 21
+4 -- 28
+4 -- 8
+6 -- 0
+6 -- 1
+8 -- 54
+8 -- 40
+10 -- 3
+10 -- 5
+12 -- 20
+12 -- 16
+14 -- 7
+14 -- 9
+16 -- 18
+16 -- 14
+18 -- 11
+18 -- 13
+20 -- 22
+20 -- 2
+22 -- 15
+22 -- 17
+24 -- 10
+24 -- 6
+26 -- 31
+26 -- 33
+28 -- 36
+28 -- 12
+30 -- 23
+30 -- 25
+32 -- 34
+32 -- 26
+34 -- 27
+34 -- 29
+36 -- 46
+36 -- 24
+38 -- 43
+38 -- 41
+40 -- 32
+40 -- 50
+42 -- 35
+42 -- 37
+44 -- 38
+44 -- 39
+46 -- 42
+46 -- 30
+48 -- 49
+48 -- 51
+50 -- 44
+50 -- 48
+52 -- 45
+52 -- 47
+54 -- 64
+54 -- 60
+56 -- 57
+56 -- 55
+58 -- 56
+58 -- 53
+60 -- 58
+60 -- 52
+62 -- 59
+62 -- 61
+64 -- 62
+64 -- 63
+0 [shape=point]
+1 [shape=point]
+2 [shape=circle, label="6"]
+3 [shape=point]
+4 [shape=circle, label="41"]
+5 [shape=point]
+6 [shape=circle, label="6"]
+7 [shape=point]
+8 [shape=circle, label="26"]
+9 [shape=point]
+10 [shape=circle, label="6"]
+11 [shape=point]
+12 [shape=circle, label="18"]
+13 [shape=point]
+14 [shape=circle, label="6"]
+15 [shape=point]
+16 [shape=circle, label="10"]
+17 [shape=point]
+18 [shape=circle, label="6"]
+19 [shape=point]
+20 [shape=circle, label="10"]
+21 [shape=point]
+22 [shape=circle, label="6"]
+23 [shape=point]
+24 [shape=circle, label="10"]
+25 [shape=point]
+26 [shape=circle, label="6"]
+27 [shape=point]
+28 [shape=circle, label="31"]
+29 [shape=point]
+30 [shape=circle, label="6"]
+31 [shape=point]
+32 [shape=circle, label="11"]
+33 [shape=point]
+34 [shape=circle, label="6"]
+35 [shape=point]
+36 [shape=circle, label="18"]
+37 [shape=point]
+38 [shape=circle, label="6"]
+39 [shape=point]
+40 [shape=circle, label="16"]
+41 [shape=point]
+42 [shape=circle, label="6"]
+43 [shape=point]
+44 [shape=circle, label="9"]
+45 [shape=point]
+46 [shape=circle, label="10"]
+47 [shape=point]
+48 [shape=circle, label="6"]
+49 [shape=point]
+50 [shape=circle, label="11"]
+51 [shape=point]
+52 [shape=circle, label="6"]
+53 [shape=point]
+54 [shape=circle, label="17"]
+55 [shape=point]
+56 [shape=circle, label="6"]
+57 [shape=point]
+58 [shape=circle, label="9"]
+59 [shape=point]
+60 [shape=circle, label="12"]
+61 [shape=point]
+62 [shape=circle, label="6"]
+63 [shape=point]
+64 [shape=circle, label="9"]
+}
