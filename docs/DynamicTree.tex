@@ -59,7 +59,7 @@ Figure~\ref{fig:loose} shows several geometric objects that may exist in a game 
 
 \begin{figure}
 	\begin{center}
-		\includesvg[width=0.6\textwidth]{LooseObjects}
+		\includesvg[width=0.6\textwidth]{images/LooseObjects}
 	\end{center}
 	\caption{Objects in a game world}
 	\label{fig:loose}
@@ -67,7 +67,7 @@ Figure~\ref{fig:loose} shows several geometric objects that may exist in a game 
 
 \begin{figure}
 	\begin{center}
-		\includesvg[width=0.6\textwidth]{LooseRayCast}
+		\includesvg[width=0.6\textwidth]{images/LooseRayCast}
 	\end{center}
 	\caption{Ray-cast against game world}
 	\label{fig:raycast}
@@ -90,7 +90,7 @@ bool BruteForceRayCast(Vec3 rayStart, Vec3 rayEnd)
 
 \begin{figure}
 	\begin{center}
-		\includesvg[width=0.6\textwidth]{LooseOverlap}
+		\includesvg[width=0.6\textwidth]{images/LooseOverlap}
 	\end{center}
 	\caption{Overlap test in game world}
 	\label{fig:overlap}
@@ -140,7 +140,7 @@ struct AABBTree
 Figure~\ref{fig:overlay} shows an AABB tree overlayed onto the game world. The colored dashed boxes represent internal nodes in the tree. Different colors represent different levels in the tree. Figure~\ref{fig:example_tree} shows the associated binary tree. Each leaf node is square and represents the geometric objects in the game world. Unlike a binary search tree, the order of the leaf nodes is not vital.
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\large, width=0.6\textwidth]{TreeOverlay}
+		\includesvg[pretex=\large, width=0.6\textwidth]{images/TreeOverlay}
 	\end{center}
 	\caption{AABB tree overlayed onto game world}
 	\label{fig:overlay}
@@ -148,7 +148,7 @@ Figure~\ref{fig:overlay} shows an AABB tree overlayed onto the game world. The c
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\large, width=\textwidth]{ExampleBinaryTree}
+		\includesvg[pretex=\large, width=\textwidth]{images/ExampleBinaryTree}
 	\end{center}
 	\caption{Example binary tree}
 	\label{fig:example_tree}
@@ -266,7 +266,7 @@ Figures~\ref{fig:tree_insert1}, \ref{fig:tree_insert2}, and \ref{fig:tree_insert
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\large, width=\textwidth]{TreeInsert1}
+		\includesvg[pretex=\large, width=\textwidth]{images/TreeInsert1}
 	\end{center}
 	\caption{Recursive descent into tree looking for insertion point for new leaf $Q$}
 	\label{fig:tree_insert1}
@@ -274,7 +274,7 @@ Figures~\ref{fig:tree_insert1}, \ref{fig:tree_insert2}, and \ref{fig:tree_insert
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\large, width=\textwidth]{TreeInsert2}
+		\includesvg[pretex=\large, width=\textwidth]{images/TreeInsert2}
 	\end{center}
 	\caption{Connecting new leaf $Q$ into tree with new parent node $11$}
 	\label{fig:tree_insert2}
@@ -283,7 +283,7 @@ Figures~\ref{fig:tree_insert1}, \ref{fig:tree_insert2}, and \ref{fig:tree_insert
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\large, width=\textwidth]{TreeInsert3}
+		\includesvg[pretex=\large, width=\textwidth]{images/TreeInsert3}
 	\end{center}
 	\caption{Ascend the tree and adjust the parent AABBs and heights}
 	\label{fig:tree_insert3}
@@ -291,7 +291,7 @@ Figures~\ref{fig:tree_insert1}, \ref{fig:tree_insert2}, and \ref{fig:tree_insert
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\Large]{NewLeaf}
+		\includesvg[pretex=\Large]{images/NewLeaf}
 	\end{center}
 	\caption{Insertion of new leaf node into a sub-tree}
 	\label{fig:new_leaf}
@@ -303,7 +303,7 @@ If node $P$ is a leaf node then we must create a new parent node $G$ and attach 
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\Large]{SingleLeaf}
+		\includesvg[pretex=\Large]{images/SingleLeaf}
 	\end{center}
 	\caption{Node $P$ is a leaf node}
 	\label{fig:single_leaf}
@@ -324,7 +324,7 @@ And the cost is the area of $AABB_G$ and is refered to as the base cost $C_b$:
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\Large]{NewGrandParent}
+		\includesvg[pretex=\Large]{images/NewGrandParent}
 	\end{center}
 	\caption{New grand parent}
 	\label{fig:grand_parent}
@@ -343,7 +343,7 @@ Descent at each node is determined selecting by comparing $C_b$, $C_1$, and $C_2
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\Large]{Child1Leaf}
+		\includesvg[pretex=\Large]{images/Child1Leaf}
 	\end{center}
 	\caption{Child 1 is a leaf node}
 	\label{fig:child1_leaf}
@@ -351,7 +351,7 @@ Descent at each node is determined selecting by comparing $C_b$, $C_1$, and $C_2
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\Large]{Child1Internal}
+		\includesvg[pretex=\Large]{images/Child1Internal}
 	\end{center}
 	\caption{Child 1 is an internal node}
 	\label{fig:child1_internal}
@@ -365,7 +365,7 @@ Consider a game world with many identical geometric objects in a row as shown in
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\Large]{TileBased}
+		\includesvg[pretex=\Large]{images/TileBased}
 	\end{center}
 	\caption{Game world with many geometric objects in a row}
 	\label{fig:tile_based}
@@ -373,7 +373,7 @@ Consider a game world with many identical geometric objects in a row as shown in
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\Large]{LinkedList}
+		\includesvg[pretex=\Large]{images/LinkedList}
 	\end{center}
 	\caption{Tree built in the shape of a linked list. The area is shown next to each internal node. Total internal node area is 35. }
 	\label{fig:linked_list}
@@ -381,7 +381,7 @@ Consider a game world with many identical geometric objects in a row as shown in
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\Large]{Balanced}
+		\includesvg[pretex=\Large]{images/Balanced}
 	\end{center}
 	\caption{Balanced tree. The area is shown next to each internal node. Total internal node area is 24. }
 	\label{fig:balanced}
@@ -395,7 +395,7 @@ Consider a subtree rotation as shown in Figure~\ref{fig:rotate}. In this rotatio
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\Large]{Rotate}
+		\includesvg[pretex=\Large]{images/Rotate}
 	\end{center}
 	\caption{Tree rotation, $B \Leftrightarrow F$ }
 	\label{fig:rotate}
@@ -429,7 +429,7 @@ Objects in a game world tend to move coherently and the distance per frame is of
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\Large, width=0.25\textwidth]{InflatedAABBs}
+		\includesvg[pretex=\Large, width=0.25\textwidth]{images/InflatedAABBs}
 	\end{center}
 	\caption{Inflated AABBs (solid) allow actual AABBs (dashed) to move by some amount without requiring a tree update. }
 	\label{fig:inflated}
@@ -441,7 +441,7 @@ A simple but non-trivial test was performed in Box2D using the scene from Figure
 
 \begin{figure}
 	\begin{center}
-		\includegraphics[width=0.5\textwidth]{Pyramid}
+		\includegraphics[width=0.5\textwidth]{images/Pyramid}
 	\end{center}
 	\caption{ Pyramid test from Box2D. Each box is 1-by-1 units (perimeter = 4).}
 	\label{fig:pyramid}
@@ -451,7 +451,7 @@ Figure~\ref{fig:pyramid_base} shows the resulting tree built by insertion and no
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\tiny, height=8cm]{PyramidBase}
+		\includesvg[pretex=\tiny, height=8cm]{images/PyramidBase}
 	\end{center}
 	\caption{ Pyramid test built without rotations. Leaf nodes are drawn as points and have an perimeter of 4. The total internal node area is 391 (excluding the root node). The tree height is 13. }
 	\label{fig:pyramid_base}
@@ -459,7 +459,7 @@ Figure~\ref{fig:pyramid_base} shows the resulting tree built by insertion and no
 
 \begin{figure}
 	\begin{center}
-		\includesvg[pretex=\tiny, width=0.8\textwidth]{PyramidRotate}
+		\includesvg[pretex=\tiny, width=0.8\textwidth]{images/PyramidRotate}
 	\end{center}
 	\caption{ Pyramid test built with rotations. Leaf nodes are drawn as points and have an perimeter of 4. The total internal node area is 317 (excluding the root node). The tree height is 6. }
 	\label{fig:pyramid_rotate}
