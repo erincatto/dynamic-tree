@@ -13,20 +13,19 @@ I’m planning to give a talk on Dynamic AABB trees. I can do this in 25 minutes
 
 
 Title:
-Incremental Bounding Volume Hierarchies
+Dynamic Bounding Volume Hierarchies
 
 Session Summary:
-Bounding volume hierarchies are used to accelerate ray casts, overlap queries, and closest point queries for large game worlds. Incremental hierarchies allow objects to be created, destroyed, and moved while maintaining fast queries. The performance of these hierarchies can be improved by optimizing the surface area of the nodes.
+Bounding volume hierarchies are used to accelerate ray casts, overlap queries, and closest point queries for large game worlds. Dynamic hierarchies allow objects to be created, destroyed, and moved while maintaining fast queries. Careful construction techniques can be used to avoid performance pitfalls that are common in procedurally generated game worlds.
 
 Takeaway:
-This session demonstrates how to build an incremental bounding volume hierarchy while optimizing for query speed.
+This session demonstrates how to build a dynamic bounding volume hierarchy while optimizing for query speed.
 
 Intended Audience:
 Anyone interested in ray casting and large game worlds. Knowledge of basic data structures such as binary trees is assumed.
 
 Speaker Bio:
-Erin Catto, Lead Software Engineer - Blizzard Entertainment, Shared Game Engine
-Erin got his start in the game industry at Crystal Dynamics where he wrote the physics engine for Tomb Raider: Legend. He is currently at Blizzard Entertainment working on the Domino physics engine used by Diablo3, StarCraft, Overwatch, World of WarCraft, Heroes of the Storm, and Call of Duty. He is the author of the Box2D open source physics engine, used to create Crayon Physics, Limbo, and Angry Birds.
+Erin Catto is a physics and animation lead at Blizzard Entertainment working on the shared game engine project. Erin got his start in the game industry at Crystal Dynamics where he wrote the physics engine for Tomb Raider: Legend. He is currently working on the Domino physics engine used by Diablo 3, StarCraft, Overwatch, World of WarCraft, Heroes of the Storm, and Call of Duty. He is the author of the Box2D open source physics engine, used to create Crayon Physics, Limbo, and Angry Birds.
 
 
 /d/graphvis-2.38/bin/dot -Tsvg input.txt > output.svg
