@@ -15,7 +15,7 @@
    version="1.1"
    id="svg8"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="Rotate.svg">
+   sodipodi:docname="RotateDiffContrib.svg">
   <defs
      id="defs2">
     <marker
@@ -89,8 +89,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
-     inkscape:cx="89.868859"
-     inkscape:cy="29.584425"
+     inkscape:cx="334.86448"
+     inkscape:cy="73.191236"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="true"
@@ -101,7 +101,7 @@
      inkscape:window-x="2552"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
-     inkscape:snap-global="true"
+     inkscape:snap-global="false"
      inkscape:snap-bbox="true"
      inkscape:bbox-paths="true"
      inkscape:bbox-nodes="true"
@@ -130,7 +130,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -139,6 +139,24 @@
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(-26.487867,-67.870838)">
+    <circle
+       r="4.8154163"
+       cy="88.376053"
+       cx="73.054535"
+       id="circle833"
+       style="fill:none;fill-opacity:1;stroke:#ff00ff;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+    <text
+       id="text837"
+       y="89.642296"
+       x="70.306152"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       xml:space="preserve"><tspan
+         sodipodi:role="line"
+         id="tspan920"
+         x="70.306152"
+         y="89.642296">C<tspan
+   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:64.99999762%;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;baseline-shift:sub;text-anchor:start"
+   id="tspan922">1</tspan></tspan></text>
     <circle
        r="0"
        style="fill:none;stroke:#000000;stroke-width:0.5291667;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
@@ -243,90 +261,56 @@
        id="path850"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0" />
-    <g
-       id="g879"
-       transform="translate(-49.712131,-1.1906161)">
-      <circle
-         style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-         id="circle833"
-         cx="122.76666"
-         cy="89.566666"
-         r="3.96875" />
-      <text
-         xml:space="preserve"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-         x="121.00019"
-         y="91.362076"
-         id="text837"><tspan
-           y="91.362076"
-           x="121.00019"
-           id="tspan856"
-           sodipodi:role="line">C</tspan></text>
-    </g>
-    <g
-       id="g889"
-       transform="translate(-51.476026,0.48475266)">
-      <circle
-         r="3.96875"
-         cy="103.85417"
-         cx="117.475"
-         id="circle839"
-         style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
-      <text
-         id="text843"
-         y="105.64958"
-         x="115.84599"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-         xml:space="preserve"><tspan
-           y="105.64958"
-           x="115.84599"
-           id="tspan862"
-           sodipodi:role="line">F</tspan></text>
-    </g>
-    <g
-       id="g884"
-       transform="translate(-47.066298,0.48475266)">
-      <circle
-         style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-         id="circle846"
-         cx="130.70416"
-         cy="103.85417"
-         r="3.96875" />
-      <text
-         xml:space="preserve"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-         x="128.82675"
-         y="105.64717"
-         id="text850"><tspan
-           y="105.64717"
-           x="128.82675"
-           id="tspan864"
-           sodipodi:role="line">G</tspan></text>
-    </g>
+    <circle
+       style="fill:none;fill-opacity:1;stroke:#ff0000;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="circle839"
+       cx="65.99897"
+       cy="104.33893"
+       r="3.96875" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="64.369965"
+       y="106.13434"
+       id="text843"><tspan
+         sodipodi:role="line"
+         id="tspan862"
+         x="64.369965"
+         y="106.13434">F</tspan></text>
+    <circle
+       r="3.96875"
+       cy="104.33893"
+       cx="83.637863"
+       id="circle846"
+       style="fill:none;fill-opacity:1;stroke:#ff0000;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+    <text
+       id="text850"
+       y="106.13193"
+       x="81.760452"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       xml:space="preserve"><tspan
+         sodipodi:role="line"
+         id="tspan864"
+         x="81.760452"
+         y="106.13193">G</tspan></text>
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 59.951003,74.94493 70.28306,85.535291"
+       d="m 59.950939,74.945002 9.76522,9.928759"
        id="path901"
        inkscape:connector-type="polyline"
-       inkscape:connector-curvature="0"
-       inkscape:connection-start="#g874"
-       inkscape:connection-end="#g879" />
+       inkscape:connector-curvature="0" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 75.247552,91.68379 6.197292,9.34739"
+       d="m 75.906838,92.251769 5.540177,8.778401"
        id="path905"
        inkscape:connector-type="polyline"
-       inkscape:connector-curvature="0"
-       inkscape:connection-start="#g879"
-       inkscape:connection-end="#g884" />
+       inkscape:connector-curvature="0" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 67.603406,100.70897 3.846692,-8.702964"
+       d="m 67.600479,100.70691 3.569064,-8.037383"
        id="path908"
        inkscape:connector-type="polyline"
-       inkscape:connector-curvature="0"
-       inkscape:connection-start="#g889"
-       inkscape:connection-end="#g879" />
+       inkscape:connector-curvature="0" />
     <path
        style="fill:none;stroke:#0026f7;stroke-width:0.565;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1;marker-start:url(#Arrow1Mstart);marker-end:url(#Arrow1Mend)"
        d="m 48.183701,87.979168 c 5.425298,1.443122 10.155788,5.585574 13.229168,10.583334"
@@ -375,66 +359,44 @@
        id="path1586"
        d="M 131.24805,74.94493 120.91599,85.535291"
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-    <g
-       transform="translate(56.099739,16.754132)"
-       id="g1594">
-      <circle
-         r="3.96875"
-         cy="104.82368"
-         cx="77.787498"
-         id="circle1588"
-         style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
-      <text
-         id="text1592"
-         y="106.61909"
-         x="75.788307"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-         xml:space="preserve"><tspan
-           sodipodi:role="line"
-           id="tspan1590"
-           x="75.788307"
-           y="106.61909">D</tspan></text>
-    </g>
-    <g
-       transform="translate(49.926125,16.754132)"
-       id="g1602">
-      <circle
-         style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-         id="circle1596"
-         cx="101.6"
-         cy="104.82368"
-         r="3.96875" />
-      <text
-         xml:space="preserve"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-         x="99.934814"
-         y="106.61909"
-         id="text1600"><tspan
-           sodipodi:role="line"
-           id="tspan1598"
-           x="99.934814"
-           y="106.61909">E</tspan></text>
-    </g>
-    <g
-       transform="translate(27.127858,-1.1906161)"
-       id="g1614">
-      <circle
-         r="3.96875"
-         cy="89.566666"
-         cx="122.76666"
-         id="circle1608"
-         style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
-      <text
-         id="text1612"
-         y="91.362076"
-         x="121.00019"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-         xml:space="preserve"><tspan
-           sodipodi:role="line"
-           id="tspan1610"
-           x="121.00019"
-           y="91.362076">C</tspan></text>
-    </g>
+    <circle
+       style="fill:none;fill-opacity:1;stroke:#ff0000;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="circle1588"
+       cx="133.88724"
+       cy="121.57781"
+       r="3.96875" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="131.88805"
+       y="123.37322"
+       id="text1592"><tspan
+         y="123.37322"
+         x="131.88805"
+         id="tspan1590"
+         sodipodi:role="line">D</tspan></text>
+    <circle
+       r="3.96875"
+       cy="121.57781"
+       cx="151.52612"
+       id="circle1596"
+       style="fill:none;fill-opacity:1;stroke:#ff0000;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+    <text
+       id="text1600"
+       y="123.37322"
+       x="149.86095"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       xml:space="preserve"><tspan
+         y="123.37322"
+         x="149.86095"
+         id="tspan1598"
+         sodipodi:role="line">E</tspan></text>
+    <circle
+       style="fill:none;fill-opacity:1;stroke:#ff00ff;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="circle1608"
+       cx="149.89452"
+       cy="88.376053"
+       r="4.8154163" />
     <circle
        r="3.96875"
        cy="104.33893"
@@ -451,43 +413,39 @@
          id="tspan1648"
          x="141.20996"
          y="106.13434">B</tspan></text>
-    <g
-       transform="translate(29.773691,0.48475266)"
-       id="g1630">
-      <circle
-         r="3.96875"
-         cy="103.85417"
-         cx="130.70416"
-         id="circle1624"
-         style="fill:none;fill-opacity:1;stroke:#000000;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
-      <text
-         id="text1628"
-         y="105.64717"
-         x="128.82675"
-         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
-         xml:space="preserve"><tspan
-           sodipodi:role="line"
-           id="tspan1626"
-           x="128.82675"
-           y="105.64717">G</tspan></text>
-    </g>
+    <circle
+       style="fill:none;fill-opacity:1;stroke:#ff0000;stroke-width:0.52916676;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+       id="circle1624"
+       cx="160.47786"
+       cy="104.33893"
+       r="3.96875" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="158.60045"
+       y="106.13193"
+       id="text1628"><tspan
+         y="106.13193"
+         x="158.60045"
+         id="tspan1626"
+         sodipodi:role="line">G</tspan></text>
     <path
        inkscape:connector-curvature="0"
        inkscape:connector-type="polyline"
        id="path1632"
-       d="m 136.79099,74.94493 10.33206,10.590361"
+       d="m 136.79092,74.945003 9.67075,9.912808"
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
     <path
        inkscape:connector-curvature="0"
        inkscape:connector-type="polyline"
        id="path1634"
-       d="m 152.08754,91.68379 6.19729,9.34739"
+       d="m 152.65264,92.523978 5.63405,8.505702"
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
     <path
        inkscape:connector-curvature="0"
        inkscape:connector-type="polyline"
        id="path1636"
-       d="m 144.44339,100.70897 3.8467,-8.702964"
+       d="m 144.43932,100.70632 3.46015,-7.847217"
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -495,7 +453,6 @@
        id="path1724"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
-       inkscape:connection-start="#g1594"
        inkscape:connection-end="#circle1616" />
     <path
        style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -503,12 +460,24 @@
        id="path1726"
        inkscape:connector-type="polyline"
        inkscape:connector-curvature="0"
-       inkscape:connection-start="#g1602"
        inkscape:connection-end="#circle1616" />
     <path
        style="fill:#00ff00;fill-opacity:1;stroke:#000000;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 89.87137,89.357565 v 2.534876 h 10.58333 v 1.267438 l 5.29167,-2.534876 -5.29167,-2.534876 v 1.267438 z"
        id="path1732"
        inkscape:connector-curvature="0" />
+    <text
+       id="text837-7"
+       y="89.54435"
+       x="147.09813"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.93888903px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       xml:space="preserve"><tspan
+         style="stroke-width:0.26458332"
+         sodipodi:role="line"
+         id="tspan920-8"
+         x="147.09813"
+         y="89.54435">C<tspan
+   style="font-size:64.99999762%;baseline-shift:sub"
+   id="tspan948">2</tspan></tspan></text>
   </g>
 </svg>
