@@ -18,7 +18,7 @@
 
 #include "GLFW/glfw3.h"
 
-#include "box2d-lite/World.h"
+#include "dynamic-tree/dynamic_tree.h"
 #include "box2d-lite/Body.h"
 #include "box2d-lite/Joint.h"
 

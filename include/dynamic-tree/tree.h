@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2009 Erin Catto http://www.box2d.org
+* Copyright (c) 2019 Erin Catto http://www.box2d.org
 *
 * This software is provided 'as-is', without any express or implied
 * warranty.  In no event will the authors be held liable for any damages
@@ -16,16 +16,14 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifndef B2_DYNAMIC_TREE_H
-#define B2_DYNAMIC_TREE_H
+#pragma once
 
-#include "Box2D/Collision/b2Collision.h"
-#include "Box2D/Common/b2GrowableStack.h"
+#include "utils.h"
 
 #define b2_nullNode (-1)
 
 /// A node in the dynamic tree. The client does not interact with this directly.
-struct b2TreeNode
+struct Node
 {
 	bool IsLeaf() const
 	{
