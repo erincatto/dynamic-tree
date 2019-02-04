@@ -12,26 +12,42 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 
+#if defined(__APPLE_CC__)
+#include <OpenGL/gl3.h>
+#define GLFW_INCLUDE_GLCOREARB
+#else
+#include "glad.h"
+#endif
+
+#include "glfw/glfw3.h"
 #include "imgui/imgui.h"
 #include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl2.h"
-
-#include "GLFW/glfw3.h"
+#include "imgui_impl_opengl3.h"
 
 #include "dynamic-tree/tree.h"
 
+#include "draw.h"
+#include "test.h"
+
+extern Test* g_test1;
+
 namespace
 {
-	GLFWwindow* mainWindow = NULL;
+	GLFWwindow* g_window = nullptr;
 
-	dtTree tree;
+	Draw g_draw;
+	Camera& g_camera = g_draw.m_camera;
 
-	int demoIndex = 0;
+	float g_mouseX = 0.0f;
+	float g_mouseY = 0.0f;
 
-	int width = 1280;
-	int height = 720;
-	float zoom = 10.0f;
-	float pan_y = 8.0f;
+	int g_width = 1280;
+	int g_height = 720;
+
+	Test* g_tests[128];
+	int g_testCount = 0;
+	int g_testIndex = 0;
+	Test* g_test = nullptr;
 }
 
 static void glfwErrorCallback(int error, const char* description)
@@ -39,55 +55,17 @@ static void glfwErrorCallback(int error, const char* description)
 	printf("GLFW error %d: %s\n", error, description);
 }
 
-static void DrawText(int x, int y, const char* string)
+static void InitTestArray()
 {
-	ImVec2 p;
-	p.x = float(x);
-	p.y = float(y);
-	ImGui::Begin("Overlay", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-	ImGui::SetCursorPos(p);
-	ImGui::TextColored(ImColor(230, 153, 153, 255), "%s", string);
-	ImGui::End();
+	g_tests[0] = g_test1;
+	g_testCount = 1;
 }
 
-static void DrawBox(const dtAABB& aabb)
+static void InitTest(int index)
 {
-	dtVec c = aabb.upperBound - aabb.lowerBound;
-	dtVec h = 0.5f * (aabb.lowerBound + aabb.upperBound);
-
-	dtVec v1 = c + dtVecSet(-h.x, -h.y, 0.0f);
-	dtVec v2 = c + dtVecSet( h.x, -h.y, 0.0f);
-	dtVec v3 = c + dtVecSet( h.x,  h.y, 0.0f);
-	dtVec v4 = c + dtVecSet(-h.x,  h.y, 0.0f);
-
-	glColor3f(0.8f, 0.8f, 0.9f);
-
-	glBegin(GL_LINE_LOOP);
-	glVertex2f(v1.x, v1.y);
-	glVertex2f(v2.x, v2.y);
-	glVertex2f(v3.x, v3.y);
-	glVertex2f(v4.x, v4.y);
-	glEnd();
-}
-
-// Single box
-static void Demo1()
-{
-	dtAABB b;
-	b.lowerBound = dtVecSet(-0.5f, -0.5f, -0.5f);
-	b.upperBound = dtVecSet(0.5f, 0.5f, 0.5f);
-	tree.CreateProxy(b);
-}
-
-void (*demos[])() = {Demo1};
-const char* demoStrings[] = {
-	"Demo 1: A Single Box"};
-
-static void InitDemo(int index)
-{
-	tree.Clear();
-	demoIndex = index;
-	demos[index]();
+	g_test = g_tests[index];
+	g_testIndex = index;
+	g_test->Create();
 }
 
 static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -101,39 +79,106 @@ static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int 
 	{
 	case GLFW_KEY_ESCAPE:
 		// Quit
-		glfwSetWindowShouldClose(mainWindow, GL_TRUE);
+		glfwSetWindowShouldClose(g_window, GL_TRUE);
 		break;
 
 	case '1':
-		InitDemo(key - GLFW_KEY_1);
+		InitTest(key - GLFW_KEY_1);
 		break;
 	}
 }
 
-static void Reshape(GLFWwindow*, int w, int h)
+static void MouseClick(GLFWwindow* window, int button, int action, int mods)
 {
-	width = w;
-	height = h > 0 ? h : 1;
-
-	glViewport(0, 0, width, height);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-
-	float aspect = float(width) / float(height);
-	if (width >= height)
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
 	{
-		// aspect >= 1, set the height from -1 to 1, with larger width
-		glOrtho(-zoom * aspect, zoom * aspect, -zoom + pan_y, zoom + pan_y, -1.0, 1.0);
+		// Update mouse so camera doesn't jump
+		double xd, yd;
+		glfwGetCursorPos(window, &xd, &yd);
+		g_mouseX = float(xd);
+		g_mouseY = float(yd);
 	}
-	else
+}
+
+static void MouseMove(GLFWwindow* window, double xd, double yd)
+{
+	float x = float(xd);
+	float y = float(yd);
+
+	bool rightButton = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+
+	if (rightButton)
 	{
-		// aspect < 1, set the width to -1 to 1, with larger height
-		glOrtho(-zoom, zoom, -zoom / aspect + pan_y, zoom / aspect + pan_y, -1.0, 1.0);
+		const float rate = 0.2f * dtPi / 180.0f;
+		g_camera.m_yaw -= rate * (x - g_mouseX);
+		g_camera.m_pitch += rate * (y - g_mouseY);
+
+		g_mouseX = x;
+		g_mouseY = y;
 	}
+}
+
+static void UpdateCamera()
+{
+	float speed = 0.5f;
+
+	int leftShift = glfwGetKey(g_window, GLFW_KEY_LEFT_SHIFT);
+	int rightShift = glfwGetKey(g_window, GLFW_KEY_RIGHT_SHIFT);
+	int leftCtrl = glfwGetKey(g_window, GLFW_KEY_LEFT_CONTROL);
+	int rightCtrl = glfwGetKey(g_window, GLFW_KEY_RIGHT_CONTROL);
+
+	if (leftShift == GLFW_PRESS || rightShift == GLFW_PRESS)
+	{
+		speed *= 4.0f;
+	}
+
+	if (leftCtrl == GLFW_PRESS || rightCtrl == GLFW_PRESS)
+	{
+		speed *= 0.25f;
+	}
+
+	if (glfwGetKey(g_window, GLFW_KEY_W) == GLFW_PRESS)
+	{
+		g_camera.m_matrix.cw -= speed * g_camera.GetForward();
+	}
+
+	if (glfwGetKey(g_window, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		g_camera.m_matrix.cw += speed * g_camera.GetForward();
+	}
+
+	if (glfwGetKey(g_window, GLFW_KEY_A) == GLFW_PRESS)
+	{
+		g_camera.m_matrix.cw -= speed * g_camera.GetRight();
+	}
+
+	if (glfwGetKey(g_window, GLFW_KEY_D) == GLFW_PRESS)
+	{
+		g_camera.m_matrix.cw += speed * g_camera.GetRight();
+	}
+
+	if (glfwGetKey(g_window, GLFW_KEY_Q) == GLFW_PRESS)
+	{
+		g_camera.m_matrix.cw += speed * g_camera.GetUp();
+	}
+
+	if (glfwGetKey(g_window, GLFW_KEY_E) == GLFW_PRESS)
+	{
+		g_camera.m_matrix.cw -= speed * g_camera.GetUp();
+	}
+
+	g_camera.Update();
+}
+
+static void Resize(GLFWwindow*, int w, int h)
+{
+	g_camera.Resize(w, h);
 }
 
 int main(int, char**)
 {
+	GLenum glError;
+
 	glfwSetErrorCallback(glfwErrorCallback);
 
 	if (glfwInit() == 0)
@@ -142,54 +187,97 @@ int main(int, char**)
 		return -1;
 	}
 
-	mainWindow = glfwCreateWindow(width, height, "box2d-lite", NULL, NULL);
-	if (mainWindow == NULL)
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+	g_window = glfwCreateWindow(g_camera.m_ws, g_camera.m_hs, "dynamic-tree", NULL, NULL);
+	if (g_window == NULL)
 	{
-		fprintf(stderr, "Failed to open GLFW mainWindow.\n");
+		fprintf(stderr, "Failed to open GLFW g_window.\n");
 		glfwTerminate();
 		return -1;
 	}
 
-	glfwMakeContextCurrent(mainWindow);
+	glfwMakeContextCurrent(g_window);
+
+	// Load OpenGL functions using glad
+	if (gladLoadGLLoader((GLADloadproc)glfwGetProcAddress) == 0)
+	{
+		printf("Failed to initialize OpenGL context\n");
+		return -1;
+	}
+
 	glfwSwapInterval(1);
-	glfwSetWindowSizeCallback(mainWindow, Reshape);
-	glfwSetKeyCallback(mainWindow, Keyboard);
+	glfwSetWindowSizeCallback(g_window, Resize);
+	glfwSetKeyCallback(g_window, Keyboard);
+	glfwSetMouseButtonCallback(g_window, MouseClick);
+	glfwSetCursorPosCallback(g_window, MouseMove);
+
+	glError = glGetError();
+	if (glError != GL_NO_ERROR)
+	{
+		assert(false);
+	}
 
 	float xscale, yscale;
-	glfwGetWindowContentScale(mainWindow, &xscale, &yscale);
+	glfwGetWindowContentScale(g_window, &xscale, &yscale);
 	float uiScale = xscale;
 
+	bool success;
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsClassic();
-	ImGui_ImplGlfw_InitForOpenGL(mainWindow, true);
-	ImGui_ImplOpenGL2_Init();
+
+	success = ImGui_ImplGlfw_InitForOpenGL(g_window, true);
+	if (success == false)
+	{
+		printf("ImGui_ImplGlfw_InitForOpenGL failed\n");
+		assert(false);
+	}
+
+	success = ImGui_ImplOpenGL3_Init();
+	if (success == false)
+	{
+		printf("ImGui_ImplOpenGL3_Init failed\n");
+		assert(false);
+	}
+
 	ImGuiIO& io = ImGui::GetIO();
 	io.FontGlobalScale = uiScale;
 
-	glViewport(0, 0, width, height);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	
-	float aspect = float(width) / float(height);
-	if (width >= height)
+	g_draw.Create();
+
+	glError = glGetError();
+	if (glError != GL_NO_ERROR)
 	{
-		// aspect >= 1, set the height from -1 to 1, with larger width
-		glOrtho(-zoom * aspect, zoom * aspect, -zoom + pan_y, zoom + pan_y, -1.0, 1.0);
-	}
-	else
-	{
-		// aspect < 1, set the width to -1 to 1, with larger height
-		glOrtho(-zoom, zoom, -zoom / aspect + pan_y, zoom / aspect + pan_y, -1.0, 1.0);
+		assert(false);
 	}
 
-	InitDemo(0);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_DEPTH_TEST);
+	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	glViewport(0, 0, g_width, g_height);
 
-	while (!glfwWindowShouldClose(mainWindow))
+	InitTestArray();
+	InitTest(0);
+
+	while (glfwWindowShouldClose(g_window) == false)
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		ImGui_ImplOpenGL2_NewFrame();
+		glError = glGetError();
+		if (glError != GL_NO_ERROR)
+		{
+			assert(false);
+		}
+
+		glfwGetFramebufferSize(g_window, &g_width, &g_height);
+		glViewport(0, 0, g_width, g_height);
+
+		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
@@ -198,31 +286,42 @@ int main(int, char**)
 		ImGui::Begin("Overlay", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 		ImGui::End();
 
-		DrawText(5, 5, demoStrings[demoIndex]);
-		DrawText(5, 35, "Keys: 1-9 Demos");
+		g_draw.DrawString(5, 5, "test %d", g_testIndex);
 
 		char buffer[64];
-		sprintf(buffer, "height %d", tree.ComputeHeight());
-		DrawText(5, 65, buffer);
+		sprintf(buffer, "height %d", g_test->m_tree.ComputeHeight());
+		g_draw.DrawString(5, 65, buffer);
 
-		glMatrixMode(GL_MODELVIEW);
-		glLoadIdentity();
+		UpdateCamera();
 
-		for (int i = 0; i < tree.m_nodeCapacity; ++i)
+		Color color(0.3f, 0.3f, 0.8f);
+		for (int i = 0; i < g_test->m_tree.m_nodeCapacity; ++i)
 		{
-			if (tree.m_nodes[i].next)
+			if (g_test->m_tree.m_nodes[i].height != -1)
 			{
-				DrawBox(tree.m_nodes[i].aabb);
+				g_draw.DrawBox(g_test->m_tree.m_nodes[i].aabb, color);
 			}
 		}
 
+		g_draw.DrawPoint(dtVec_Zero, 10.0f, Color(1.0f, 0.0f, 0.0f));
+		g_draw.DrawAxes();
+		g_draw.Flush();
+
 		ImGui::Render();
-		ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+		glfwSwapBuffers(g_window);
+
+		glError = glGetError();
+		if (glError != GL_NO_ERROR)
+		{
+			assert(false);
+		}
 
 		glfwPollEvents();
-		glfwSwapBuffers(mainWindow);
 	}
 
+	g_draw.Destroy();
 	glfwTerminate();
 	return 0;
 }
