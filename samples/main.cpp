@@ -29,8 +29,6 @@
 #include "draw.h"
 #include "test.h"
 
-extern Test* g_test1;
-
 namespace
 {
 	GLFWwindow* g_window = nullptr;
@@ -48,6 +46,10 @@ namespace
 	int g_testCount = 0;
 	int g_testIndex = 0;
 	Test* g_test = nullptr;
+
+	bool g_showUI = true;
+	bool g_rotate = true;
+	bool g_drawInternal = true;
 }
 
 static void glfwErrorCallback(int error, const char* description)
@@ -57,12 +59,17 @@ static void glfwErrorCallback(int error, const char* description)
 
 static void InitTestArray()
 {
+	extern Test* g_test1;
+	extern Test* g_test2;
+
 	g_tests[0] = g_test1;
-	g_testCount = 1;
+	g_tests[1] = g_test2;
+	g_testCount = 2;
 }
 
 static void InitTest(int index)
 {
+	g_tests[g_testIndex]->Destroy();
 	g_test = g_tests[index];
 	g_testIndex = index;
 	g_test->Create();
@@ -82,8 +89,18 @@ static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int 
 		glfwSetWindowShouldClose(g_window, GL_TRUE);
 		break;
 
-	case '1':
-		InitTest(key - GLFW_KEY_1);
+	case GLFW_KEY_LEFT_BRACKET:
+		{
+			int testIndex = dtMax(0, g_testIndex - 1);
+			InitTest(testIndex);
+		}
+		break;
+
+	case GLFW_KEY_RIGHT_BRACKET:
+		{
+			int testIndex = dtMin(g_testCount - 1, g_testIndex + 1);
+			InitTest(testIndex);
+		}
 		break;
 	}
 }
@@ -168,6 +185,38 @@ static void UpdateCamera()
 	}
 
 	g_camera.Update();
+}
+
+static void DrawUI()
+{
+	if (g_showUI == false)
+	{
+		return;
+	}
+
+	float menuWidth = 200.0f;
+	ImGui::SetNextWindowPos(ImVec2(g_camera.m_ws - menuWidth - 10.0f, 10.0f));
+	ImGui::SetNextWindowSize(ImVec2(menuWidth, g_camera.m_hs - 20.0f));
+	ImGui::Begin("Controls", &g_showUI, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+	ImGui::PushAllowKeyboardFocus(false);
+
+	bool changed = ImGui::Checkbox("Rotate", &g_rotate);
+	if (changed)
+	{
+		InitTest(g_testIndex);
+	}
+
+	ImGui::Checkbox("Draw Internal", &g_drawInternal);
+
+	ImGui::Separator();
+
+	if (ImGui::Button("Quit"))
+	{
+		glfwSetWindowShouldClose(g_window, GL_TRUE);
+	}
+
+	ImGui::PopAllowKeyboardFocus();
+	ImGui::End();
 }
 
 static void Resize(GLFWwindow*, int w, int h)
@@ -264,6 +313,23 @@ int main(int, char**)
 	InitTestArray();
 	InitTest(0);
 
+	const int colorCount = 12;
+	Color colors[colorCount] =
+	{
+		{0.3f, 0.3f, 0.8f, 1.0f},
+		{0.8f, 0.3f, 0.3f, 1.0f},
+		{0.3f, 0.8f, 0.3f, 1.0f},
+		{0.8f, 0.8f, 0.3f, 1.0f},
+		{0.3f, 0.8f, 0.8f, 1.0f},
+		{0.8f, 0.3f, 0.8f, 1.0f},
+		{0.3f, 0.6f, 0.8f, 1.0f},
+		{0.6f, 0.3f, 0.8f, 1.0f},
+		{0.8f, 0.6f, 0.3f, 1.0f},
+		{0.8f, 0.3f, 0.6f, 1.0f},
+		{0.6f, 0.8f, 0.3f, 1.0f},
+		{0.3f, 0.8f, 0.6f, 1.0f}
+	};
+
 	while (glfwWindowShouldClose(g_window) == false)
 	{
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -286,26 +352,38 @@ int main(int, char**)
 		ImGui::Begin("Overlay", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 		ImGui::End();
 
-		g_draw.DrawString(5, 5, "test %d", g_testIndex);
+		g_draw.DrawString(5, 5, "Test %d: %s", g_testIndex, g_test->GetName());
 
 		char buffer[64];
 		sprintf(buffer, "height %d", g_test->m_tree.ComputeHeight());
-		g_draw.DrawString(5, 65, buffer);
+		g_draw.DrawString(5, 30, buffer);
 
 		UpdateCamera();
 
 		Color color(0.3f, 0.3f, 0.8f);
 		for (int i = 0; i < g_test->m_tree.m_nodeCapacity; ++i)
 		{
-			if (g_test->m_tree.m_nodes[i].height != -1)
+			dtNode& n = g_test->m_tree.m_nodes[i];
+			if (n.height == -1)
 			{
-				g_draw.DrawBox(g_test->m_tree.m_nodes[i].aabb, color);
+				continue;
 			}
+
+			if (n.isLeaf == false && g_drawInternal == false)
+			{
+				continue;
+			}
+
+			float extension = 0.1f * n.height;
+			Color color = colors[n.height % colorCount];
+			g_draw.DrawBox(n.aabb, extension, color);
 		}
 
 		g_draw.DrawPoint(dtVec_Zero, 10.0f, Color(1.0f, 0.0f, 0.0f));
 		g_draw.DrawAxes();
 		g_draw.Flush();
+
+		DrawUI();
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -22,6 +22,11 @@
 
 static const float dtPi = 3.141592654f;
 
+inline int dtMin(int a, int b)
+{
+	return a < b ? a : b;
+}
+
 inline int dtMax(int a, int b)
 {
 	return a > b ? a : b;

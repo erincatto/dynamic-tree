@@ -6,7 +6,8 @@ set (SAMPLE_SOURCE_FILES
 	imgui_impl_opengl3.cpp
 	draw.cpp
 	main.cpp
-	test1.cpp)
+	test1.cpp
+	test2.cpp)
 
 set (SAMPLE_HEADER_FILES
 	khrplatform.h

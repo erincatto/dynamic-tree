@@ -112,6 +112,7 @@ int dtTree::AllocateNode()
 	m_nodes[nodeId].child1 = dt_nullNode;
 	m_nodes[nodeId].child2 = dt_nullNode;
 	m_nodes[nodeId].height = 0;
+	m_nodes[nodeId].isLeaf = false;
 	++m_nodeCount;
 	return nodeId;
 }
