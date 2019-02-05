@@ -1,5 +1,4 @@
 #include "test.h"
-#include "draw.h"
 
 struct Test1 : Test
 {
@@ -8,12 +7,12 @@ struct Test1 : Test
 		return "Single Box";
 	}
 
-	void Create() override
+	void Create(bool rotate) override
 	{
 		dtAABB b;
 		b.lowerBound = dtVecSet(-0.5f, -0.5f, -0.5f);
 		b.upperBound = dtVecSet(0.5f, 0.5f, 0.5f);
-		m_tree.CreateProxy(b);
+		m_tree.CreateProxy(b, rotate);
 	}
 
 	void Destroy() override

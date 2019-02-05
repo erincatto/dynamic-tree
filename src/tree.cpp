@@ -131,7 +131,7 @@ void dtTree::FreeNode(int nodeId)
 // Create a proxy in the tree as a leaf node. We return the index
 // of the node instead of a pointer so that we can grow
 // the node pool.
-int dtTree::CreateProxy(const dtAABB& aabb)
+int dtTree::CreateProxy(const dtAABB& aabb, bool rotate)
 {
 	int proxyId = AllocateNode();
 
@@ -140,7 +140,7 @@ int dtTree::CreateProxy(const dtAABB& aabb)
 	m_nodes[proxyId].height = 0;
 	m_nodes[proxyId].isLeaf = true;
 
-	InsertLeaf(proxyId);
+	InsertLeaf(proxyId, rotate);
 
 	return proxyId;
 }
@@ -184,7 +184,7 @@ bool dtTree::MoveProxy(int proxyId, const dtVec& d)
 
 	m_nodes[proxyId].aabb = b;
 
-	InsertLeaf(proxyId);
+	InsertLeaf(proxyId, true);
 	return true;
 }
 
@@ -202,7 +202,7 @@ static inline bool b2CompareCandidates(const b2CandidateNode& a, const b2Candida
 }
 
 // Insert using branch and bound
-void dtTree::InsertLeaf(int leaf)
+void dtTree::InsertLeaf(int leaf, bool rotate)
 {
 	++m_insertionCount;
 
@@ -337,7 +337,7 @@ void dtTree::InsertLeaf(int leaf)
 #else
 
 //
-void dtTree::InsertLeaf(int leaf)
+void dtTree::InsertLeaf(int leaf, bool rotate)
 {
 	++m_insertionCount;
 
@@ -472,7 +472,10 @@ void dtTree::InsertLeaf(int leaf)
 		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
 		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
 
-		Rotate(index);
+		if (rotate)
+		{
+			Rotate(index);
+		}
 
 		index = m_nodes[index].parent;
 	}

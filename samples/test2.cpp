@@ -1,5 +1,4 @@
 #include "test.h"
-#include "draw.h"
 
 struct Test2 : Test
 {
@@ -8,7 +7,7 @@ struct Test2 : Test
 		return "Ordered Row";
 	}
 
-	void Create() override
+	void Create(bool rotate) override
 	{
 		float x = 0.0f;
 		for (int i = 0; i < 10; ++i)
@@ -16,7 +15,7 @@ struct Test2 : Test
 			dtAABB box;
 			box.lowerBound = dtVecSet(x, 0.0f, 0.0f);
 			box.upperBound = dtVecSet(x + 1.0f, 1.0f, 1.0f);
-			m_tree.CreateProxy(box);
+			m_tree.CreateProxy(box, rotate);
 			x += 1.0f;
 		}
 	}

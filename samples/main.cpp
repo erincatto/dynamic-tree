@@ -61,10 +61,12 @@ static void InitTestArray()
 {
 	extern Test* g_test1;
 	extern Test* g_test2;
+	extern Test* g_test3;
 
 	g_tests[0] = g_test1;
 	g_tests[1] = g_test2;
-	g_testCount = 2;
+	g_tests[2] = g_test3;
+	g_testCount = 3;
 }
 
 static void InitTest(int index)
@@ -72,7 +74,7 @@ static void InitTest(int index)
 	g_tests[g_testIndex]->Destroy();
 	g_test = g_tests[index];
 	g_testIndex = index;
-	g_test->Create();
+	g_test->Create(g_rotate);
 }
 
 static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -355,7 +357,7 @@ int main(int, char**)
 		g_draw.DrawString(5, 5, "Test %d: %s", g_testIndex, g_test->GetName());
 
 		char buffer[64];
-		sprintf(buffer, "height %d", g_test->m_tree.ComputeHeight());
+		sprintf(buffer, "height %d, area ratio %g", g_test->m_tree.ComputeHeight(), g_test->m_tree.GetAreaRatio());
 		g_draw.DrawString(5, 30, buffer);
 
 		UpdateCamera();

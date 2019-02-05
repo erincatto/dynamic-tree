@@ -7,7 +7,8 @@ set (SAMPLE_SOURCE_FILES
 	draw.cpp
 	main.cpp
 	test1.cpp
-	test2.cpp)
+	test2.cpp
+	test3.cpp)
 
 set (SAMPLE_HEADER_FILES
 	khrplatform.h

@@ -62,7 +62,7 @@ struct dtTree
 	void Clear();
 
 	/// Create a proxy. Provide a tight fitting AABB and a userData pointer.
-	int CreateProxy(const dtAABB& aabb);
+	int CreateProxy(const dtAABB& aabb, bool rotate);
 
 	/// Destroy a proxy. This asserts if the id is invalid.
 	void DestroyProxy(int proxyId);
@@ -96,7 +96,7 @@ struct dtTree
 	int AllocateNode();
 	void FreeNode(int node);
 
-	void InsertLeaf(int node);
+	void InsertLeaf(int node, bool rotate);
 	void RemoveLeaf(int node);
 
 	void Rotate(int index);
