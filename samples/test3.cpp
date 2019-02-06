@@ -57,8 +57,9 @@ struct Test3 : Test
 		fclose(file);
 	}
 
-	void Create(bool rotate) override
+	void Create(dtTreeHeuristic heuristic, bool rotate) override
 	{
+		m_tree.m_heuristic = heuristic;
 		Load("data/tree03.txt");
 
 		int aabbCount = m_vertexCount / 2;

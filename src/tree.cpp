@@ -16,6 +16,7 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
+#define _CRT_SECURE_NO_WARNINGS
 #include "dynamic-tree/tree.h"
 #include <string.h>
 #include <queue>
@@ -188,8 +189,6 @@ bool dtTree::MoveProxy(int proxyId, const dtVec& d)
 	return true;
 }
 
-#if 0
-
 struct b2CandidateNode
 {
 	int index;
@@ -202,7 +201,7 @@ static inline bool b2CompareCandidates(const b2CandidateNode& a, const b2Candida
 }
 
 // Insert using branch and bound
-void dtTree::InsertLeaf(int leaf, bool rotate)
+void dtTree::InsertLeafSAH(int leaf, bool rotate)
 {
 	++m_insertionCount;
 
@@ -214,7 +213,7 @@ void dtTree::InsertLeaf(int leaf, bool rotate)
 	}
 
 	dtAABB aabbQ = m_nodes[leaf].aabb;
-	float areaQ = aabbQ.GetPerimeter();
+	float areaQ = dtArea(aabbQ);
 
 	// Stage 1: find the best sibling for this node
 	std::priority_queue<b2CandidateNode, std::vector<b2CandidateNode>, decltype(&b2CompareCandidates)> queue(b2CompareCandidates);
@@ -224,7 +223,7 @@ void dtTree::InsertLeaf(int leaf, bool rotate)
 	candidate.inducedCost = 0.0f;
 	queue.push(candidate);
 
-	float bestCost = b2_maxFloat;
+	float bestCost = FLT_MAX;
 	int bestSibling = m_root;
 
 	while (queue.empty() == false)
@@ -242,26 +241,25 @@ void dtTree::InsertLeaf(int leaf, bool rotate)
 		}
 
 		const dtNode& node = m_nodes[index];
-		dtAABB aabbG;
-		aabbG.Combine(node.aabb, aabbQ);
+		dtAABB aabbG = dtUnion(node.aabb, aabbQ);
 
-		float directCost = aabbG.GetPerimeter();
+		float directCost = dtArea(aabbG);
 		float totalCost = inducedCost + directCost;
 
-		if (totalCost < bestCost)
+		if (totalCost <= bestCost)
 		{
 			bestCost = totalCost;
 			bestSibling = index;
 		}
 
-		if (nodeisLeaf)
+		if (node.isLeaf)
 		{
 			continue;
 		}
 
-		inducedCost = totalCost - node.aabb.GetPerimeter();
+		inducedCost = totalCost - dtArea(node.aabb);
 		float lowerBoundCost = inducedCost + areaQ;
-		if (lowerBoundCost < bestCost)
+		if (lowerBoundCost <= bestCost)
 		{
 			b2CandidateNode candidate1;
 			candidate1.index = node.child1;
@@ -283,8 +281,7 @@ void dtTree::InsertLeaf(int leaf, bool rotate)
 	int oldParent = m_nodes[sibling].parent;
 	int newParent = AllocateNode();
 	m_nodes[newParent].parent = oldParent;
-	m_nodes[newParent].userData = nullptr;
-	m_nodes[newParent].aabb.Combine(aabbQ, m_nodes[sibling].aabb);
+	m_nodes[newParent].aabb = dtUnion(aabbQ, m_nodes[sibling].aabb);
 	m_nodes[newParent].height = m_nodes[sibling].height + 1;
 
 	if (oldParent != dt_nullNode)
@@ -325,19 +322,28 @@ void dtTree::InsertLeaf(int leaf, bool rotate)
 		assert(child2 != dt_nullNode);
 
 		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
-		m_nodes[index].aabb.Combine(m_nodes[child1].aabb, m_nodes[child2].aabb);
+		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
 
-		Rotate(index);
+		if (rotate)
+		{
+			Rotate(index);
+		}
 
 		index = m_nodes[index].parent;
 	}
 
 	Validate();
 }
-#else
+
+// 
+static inline float dtManhattan(const dtAABB& a, const dtAABB& b)
+{
+	dtVec d = (a.lowerBound + a.upperBound) - (b.lowerBound + b.upperBound);
+	return fabsf(d.x) + fabsf(d.y) + fabsf(d.z);
+}
 
 //
-void dtTree::InsertLeaf(int leaf, bool rotate)
+void dtTree::InsertLeafManhattan(int leaf, bool rotate)
 {
 	++m_insertionCount;
 
@@ -357,60 +363,9 @@ void dtTree::InsertLeaf(int leaf, bool rotate)
 		int child1 = m_nodes[index].child1;
 		int child2 = m_nodes[index].child2;
 
-		float areaP = dtArea(m_nodes[index].aabb);
-
-		dtAABB aabbG = dtUnion(m_nodes[index].aabb, aabbQ);
-		float areaG = dtArea(aabbG);
-
-		// Cost of creating a grand parent G for this node P and the new leaf Q
-		float Cb = areaG;
-
-		// Minimum cost of pushing the leaf further down the tree
-		float deltaAreaP = areaG - areaP;
-
-		// Cost of descending into child 1
-		float C1;
-		if (m_nodes[child1].isLeaf)
-		{
-			// Child 1 is a leaf
-			// Cost of creating new node X and increasing area of node P
-			dtAABB aabbX = dtUnion(aabbQ, m_nodes[child1].aabb);
-			C1 = deltaAreaP + dtArea(aabbX);
-		}
-		else
-		{
-			// Child 1 is an internal node
-			// Cost of creating new node Y and increasing area of node P and node 1
-			dtAABB aabb1 = dtUnion(aabbQ, m_nodes[child1].aabb);
-			float deltaArea1 = dtArea(aabb1) - dtArea(m_nodes[child1].aabb);
-			float areaY = dtArea(aabbQ);
-			C1 = deltaAreaP + deltaArea1 + areaY;
-		}
-
-		// Cost of descending into child 2
-		float C2;
-		if (m_nodes[child2].isLeaf)
-		{
-			// Child 2 is a leaf
-			// Cost of creating new node X and increasing area of node P
-			dtAABB aabbX = dtUnion(aabbQ, m_nodes[child2].aabb);
-			C2 = deltaAreaP + dtArea(aabbX);
-		}
-		else
-		{
-			// Child 2 is an internal node
-			// Cost of creating new node Y and increasing area of node P and node 2
-			dtAABB aabb2 = dtUnion(aabbQ, m_nodes[child2].aabb);
-			float deltaArea2 = dtArea(aabb2) - dtArea(m_nodes[child2].aabb);
-			float areaY = dtArea(aabbQ);
-			C2 = deltaAreaP + deltaArea2 + areaY;
-		}
-
-		// Descend according to the minimum cost.
-		if (0.9f * Cb < C1 && 0.9f * Cb < C2)
-		{
-			break;
-		}
+		// Manhattan distance heuristic from Bullet
+		float C1 = dtManhattan(aabbQ, m_nodes[child1].aabb);
+		float C2 = dtManhattan(aabbQ, m_nodes[child2].aabb);
 
 		// Descend
 		if (C1 < C2)
@@ -483,7 +438,17 @@ void dtTree::InsertLeaf(int leaf, bool rotate)
 	Validate();
 }
 
-#endif
+void dtTree::InsertLeaf(int node, bool rotate)
+{
+	if (m_heuristic == dt_surfaceAreaHeuristic)
+	{
+		InsertLeafSAH(node, rotate);
+	}
+	else
+	{
+		InsertLeafManhattan(node, rotate);
+	}
+}
 
 void dtTree::RemoveLeaf(int leaf)
 {
@@ -833,9 +798,8 @@ float dtTree::GetAreaRatio() const
 	for (int i = 0; i < m_nodeCapacity; ++i)
 	{
 		const dtNode* node = m_nodes + i;
-		if (node->height < 0)
+		if (node->height < 0 || node->isLeaf)
 		{
-			// Free node in pool
 			continue;
 		}
 
@@ -843,6 +807,29 @@ float dtTree::GetAreaRatio() const
 	}
 
 	return totalArea / rootArea;
+}
+
+//
+float dtTree::GetArea() const
+{
+	if (m_root == dt_nullNode)
+	{
+		return 0.0f;
+	}
+
+	float area = 0.0f;
+	for (int i = 0; i < m_nodeCapacity; ++i)
+	{
+		const dtNode* node = m_nodes + i;
+		if (node->height < 0 || node->isLeaf || i == m_root)
+		{
+			continue;
+		}
+
+		area += dtArea(node->aabb);
+	}
+
+	return area;
 }
 
 // Compute the height of a sub-tree.
@@ -1058,13 +1045,19 @@ void dtTree::RebuildBottomUp()
 	Validate();
 }
 
-void dtTree::WriteDot() const
+void dtTree::WriteDot(const char* fileName) const
 {
+	FILE* file = fopen(fileName, "w");
+	if (file == nullptr)
+	{
+		return;
+	}
+
 	if (m_nodeCapacity > 50)
 	{
-		printf("graph\n");
-		printf("{\n");
-		printf("node[shape = point]\n");
+		fprintf(file, "graph\n");
+		fprintf(file, "{\n");
+		fprintf(file, "node[shape = point]\n");
 
 		float totalArea = 0.0f;
 		for (int i = 0; i < m_nodeCapacity; ++i)
@@ -1085,17 +1078,17 @@ void dtTree::WriteDot() const
 				totalArea += area;
 			}
 
-			printf("%d -- %d\n", i, m_nodes[i].child1);
-			printf("%d -- %d\n", i, m_nodes[i].child2);
+			fprintf(file, "%d -- %d\n", i, m_nodes[i].child1);
+			fprintf(file, "%d -- %d\n", i, m_nodes[i].child2);
 		}
 
-		printf("%d [shape=box, label=\"inner area = %.f\"]\n", m_nodeCapacity, totalArea);
-		printf("}\n");
+		fprintf(file, "%d [shape=box, label=\"inner area = %.f\"]\n", m_nodeCapacity, totalArea);
+		fprintf(file, "}\n");
 	}
 	else
 	{
-		printf("graph\n");
-		printf("{\n");
+		fprintf(file, "graph\n");
+		fprintf(file, "{\n");
 		for (int i = 0; i < m_nodeCapacity; ++i)
 		{
 			if (m_nodes[i].height == -1)
@@ -1108,8 +1101,8 @@ void dtTree::WriteDot() const
 				continue;
 			}
 
-			printf("%d -- %d\n", i, m_nodes[i].child1);
-			printf("%d -- %d\n", i, m_nodes[i].child2);
+			fprintf(file, "%d -- %d\n", i, m_nodes[i].child1);
+			fprintf(file, "%d -- %d\n", i, m_nodes[i].child2);
 		}
 
 		float totalArea = 0.0f;
@@ -1123,13 +1116,13 @@ void dtTree::WriteDot() const
 			if (m_nodes[i].isLeaf)
 			{
 				//float area = m_nodes[i].aabb.GetPerimeter();
-				//printf("%d [shape=box, label=\"%.f\"]\n", i, area);
-				printf("%d [shape=point]\n", i);
+				//fprintf(file, "%d [shape=box, label=\"%.f\"]\n", i, area);
+				fprintf(file, "%d [shape=point]\n", i);
 			}
 			else
 			{
 				float area = dtArea(m_nodes[i].aabb);
-				printf("%d [shape=circle, label=\"%.f\"]\n", i, area);
+				fprintf(file, "%d [shape=circle, label=\"%.f\"]\n", i, area);
 				if (i != m_root)
 				{
 					totalArea += area;
@@ -1137,7 +1130,9 @@ void dtTree::WriteDot() const
 			}
 		}
 
-		printf("%d [shape=box, label=\"inner area = %.f\"]\n", m_nodeCapacity, totalArea);
-		printf("}\n");
+		fprintf(file, "%d [shape=box, label=\"inner area = %.f\"]\n", m_nodeCapacity, totalArea);
+		fprintf(file, "}\n");
 	}
+
+	fclose(file);
 }

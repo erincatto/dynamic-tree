@@ -7,8 +7,10 @@ struct Test1 : Test
 		return "Single Box";
 	}
 
-	void Create(bool rotate) override
+	void Create(dtTreeHeuristic heuristic, bool rotate) override
 	{
+		m_tree.m_heuristic = heuristic;
+
 		dtAABB b;
 		b.lowerBound = dtVecSet(-0.5f, -0.5f, -0.5f);
 		b.upperBound = dtVecSet(0.5f, 0.5f, 0.5f);

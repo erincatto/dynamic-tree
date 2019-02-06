@@ -7,8 +7,9 @@ struct Test2 : Test
 		return "Ordered Row";
 	}
 
-	void Create(bool rotate) override
+	void Create(dtTreeHeuristic heuristic, bool rotate) override
 	{
+		m_tree.m_heuristic = heuristic;
 		float x = 0.0f;
 		for (int i = 0; i < 10; ++i)
 		{

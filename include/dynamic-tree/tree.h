@@ -22,6 +22,12 @@
 
 #define dt_nullNode (-1)
 
+enum dtTreeHeuristic
+{
+	dt_surfaceAreaHeuristic = 0,
+	dt_manhattanHeuristic = 1
+};
+
 /// A node in the dynamic tree. The client does not interact with this directly.
 struct dtNode
 {
@@ -88,15 +94,20 @@ struct dtTree
 	/// Get the ratio of the sum of the node areas to the root area.
 	float GetAreaRatio() const;
 
+	/// Get the area of the inner nodes
+	float GetArea() const;
+
 	/// Build an optimal tree. Very expensive. For testing.
 	void RebuildBottomUp();
 
-	void WriteDot() const;
+	void WriteDot(const char* fileName) const;
 
 	int AllocateNode();
 	void FreeNode(int node);
 
 	void InsertLeaf(int node, bool rotate);
+	void InsertLeafSAH(int node, bool rotate);
+	void InsertLeafManhattan(int node, bool rotate);
 	void RemoveLeaf(int node);
 
 	void Rotate(int index);
@@ -119,4 +130,6 @@ struct dtTree
 	unsigned m_path;
 
 	int m_insertionCount;
+
+	dtTreeHeuristic m_heuristic;
 };

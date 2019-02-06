@@ -47,6 +47,7 @@ namespace
 	int g_testIndex = 0;
 	Test* g_test = nullptr;
 
+	dtTreeHeuristic g_heuristic = dt_surfaceAreaHeuristic;
 	bool g_showUI = true;
 	bool g_rotate = true;
 	bool g_drawInternal = true;
@@ -74,7 +75,7 @@ static void InitTest(int index)
 	g_tests[g_testIndex]->Destroy();
 	g_test = g_tests[index];
 	g_testIndex = index;
-	g_test->Create(g_rotate);
+	g_test->Create(g_heuristic, g_rotate);
 }
 
 static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -209,6 +210,22 @@ static void DrawUI()
 	}
 
 	ImGui::Checkbox("Draw Internal", &g_drawInternal);
+
+	ImGui::Separator();
+	static int heuristic = int(g_heuristic);
+	ImGui::RadioButton("SAH", &heuristic, int(dt_surfaceAreaHeuristic));
+	ImGui::RadioButton("Manhattan", &heuristic, int(dt_manhattanHeuristic));
+	if (heuristic != g_heuristic)
+	{
+		g_heuristic = dtTreeHeuristic(heuristic);
+		InitTest(g_testIndex);
+	}
+	ImGui::Separator();
+
+	if (ImGui::Button("Write Dot"))
+	{
+		g_test->m_tree.WriteDot("dot.txt");
+	}
 
 	ImGui::Separator();
 
@@ -357,7 +374,7 @@ int main(int, char**)
 		g_draw.DrawString(5, 5, "Test %d: %s", g_testIndex, g_test->GetName());
 
 		char buffer[64];
-		sprintf(buffer, "height %d, area ratio %g", g_test->m_tree.ComputeHeight(), g_test->m_tree.GetAreaRatio());
+		sprintf(buffer, "height %d, area %g", g_test->m_tree.ComputeHeight(), g_test->m_tree.GetArea());
 		g_draw.DrawString(5, 30, buffer);
 
 		UpdateCamera();
