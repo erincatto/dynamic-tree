@@ -374,7 +374,7 @@ int main(int, char**)
 		g_draw.DrawString(5, 5, "Test %d: %s", g_testIndex, g_test->GetName());
 
 		char buffer[64];
-		sprintf(buffer, "height %d, area %g", g_test->m_tree.ComputeHeight(), g_test->m_tree.GetArea());
+		sprintf(buffer, "height %d, area %g", g_test->m_tree.ComputeHeight(), g_test->m_tree.GetAreaRatio());
 		g_draw.DrawString(5, 30, buffer);
 
 		UpdateCamera();

@@ -60,7 +60,7 @@ struct Test3 : Test
 	void Create(dtTreeHeuristic heuristic, bool rotate) override
 	{
 		m_tree.m_heuristic = heuristic;
-		Load("data/tree03.txt");
+		Load("data/GibraltarTree.txt");
 
 		int aabbCount = m_vertexCount / 2;
 		for (int i = 0; i < aabbCount; ++i)

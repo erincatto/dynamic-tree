@@ -798,7 +798,7 @@ float dtTree::GetAreaRatio() const
 	for (int i = 0; i < m_nodeCapacity; ++i)
 	{
 		const dtNode* node = m_nodes + i;
-		if (node->height < 0 || node->isLeaf)
+		if (node->height < 0 || node->isLeaf || i == m_root)
 		{
 			continue;
 		}
@@ -1053,13 +1053,13 @@ void dtTree::WriteDot(const char* fileName) const
 		return;
 	}
 
+	float areaRatio = GetAreaRatio();
+
 	if (m_nodeCapacity > 50)
 	{
 		fprintf(file, "graph\n");
 		fprintf(file, "{\n");
-		fprintf(file, "node[shape = point]\n");
 
-		float totalArea = 0.0f;
 		for (int i = 0; i < m_nodeCapacity; ++i)
 		{
 			if (m_nodes[i].height == -1)
@@ -1069,20 +1069,18 @@ void dtTree::WriteDot(const char* fileName) const
 
 			if (m_nodes[i].isLeaf)
 			{
-				continue;
+				fprintf(file, "node[shape=box, label=\"\"]\n");
 			}
-
-			if (i != m_root)
+			else
 			{
-				float area = dtArea(m_nodes[i].aabb);
-				totalArea += area;
+				fprintf(file, "node[shape=point]\n");
 			}
 
 			fprintf(file, "%d -- %d\n", i, m_nodes[i].child1);
 			fprintf(file, "%d -- %d\n", i, m_nodes[i].child2);
 		}
 
-		fprintf(file, "%d [shape=box, label=\"inner area = %.f\"]\n", m_nodeCapacity, totalArea);
+		fprintf(file, "%d [shape=box, label=\"area ratio = %.2f\"]\n", m_nodeCapacity, areaRatio);
 		fprintf(file, "}\n");
 	}
 	else

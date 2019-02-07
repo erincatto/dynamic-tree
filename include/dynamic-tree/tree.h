@@ -91,10 +91,10 @@ struct dtTree
 	/// in height of the two children of a node.
 	int GetMaxBalance() const;
 
-	/// Get the ratio of the sum of the node areas to the root area.
+	/// Get the ratio of the sum of the internal node areas to the root area.
 	float GetAreaRatio() const;
 
-	/// Get the area of the inner nodes
+	/// Get the area of the internal nodes
 	float GetArea() const;
 
 	/// Build an optimal tree. Very expensive. For testing.
