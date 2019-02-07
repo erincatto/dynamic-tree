@@ -19,6 +19,7 @@
 #pragma once
 
 #include "dynamic-tree/utils.h"
+#include <vector>
 
 #define dt_nullNode (-1)
 
@@ -47,6 +48,12 @@ struct dtNode
 	int height;
 
 	bool isLeaf;
+};
+
+struct dtCandidateNode
+{
+	int index;
+	float inducedCost;
 };
 
 /// A dynamic AABB tree broad-phase, inspired by Nathanael Presson's btDbvt.
@@ -132,4 +139,6 @@ struct dtTree
 	int m_insertionCount;
 
 	dtTreeHeuristic m_heuristic;
+	
+	std::vector<dtCandidateNode> m_heap;
 };

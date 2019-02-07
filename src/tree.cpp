@@ -19,7 +19,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "dynamic-tree/tree.h"
 #include <string.h>
-#include <queue>
+#include <algorithm>
 #include <assert.h>
 
 dtTree::dtTree()
@@ -44,6 +44,7 @@ dtTree::dtTree()
 	m_freeList = 0;
 	m_path = 0;
 	m_insertionCount = 0;
+	m_heap.reserve(128);
 }
 
 dtTree::~dtTree()
@@ -189,13 +190,7 @@ bool dtTree::MoveProxy(int proxyId, const dtVec& d)
 	return true;
 }
 
-struct b2CandidateNode
-{
-	int index;
-	float inducedCost;
-};
-
-static inline bool b2CompareCandidates(const b2CandidateNode& a, const b2CandidateNode& b)
+static inline bool operator < (const dtCandidateNode& a, const dtCandidateNode& b)
 {
 	return a.inducedCost > b.inducedCost;
 }
@@ -216,20 +211,20 @@ void dtTree::InsertLeafSAH(int leaf, bool rotate)
 	float areaQ = dtArea(aabbQ);
 
 	// Stage 1: find the best sibling for this node
-	std::priority_queue<b2CandidateNode, std::vector<b2CandidateNode>, decltype(&b2CompareCandidates)> queue(b2CompareCandidates);
-
-	b2CandidateNode candidate;
+	dtCandidateNode candidate;
 	candidate.index = m_root;
 	candidate.inducedCost = 0.0f;
-	queue.push(candidate);
+	m_heap.clear();
+	m_heap.push_back(candidate);
 
 	float bestCost = FLT_MAX;
 	int bestSibling = m_root;
 
-	while (queue.empty() == false)
+	while (m_heap.size() > 0)
 	{
-		candidate = queue.top();
-		queue.pop();
+		std::pop_heap(m_heap.begin(), m_heap.end());
+		candidate = m_heap.back();
+		m_heap.pop_back();
 
 		int index = candidate.index;
 		float inducedCost = candidate.inducedCost;
@@ -261,17 +256,19 @@ void dtTree::InsertLeafSAH(int leaf, bool rotate)
 		float lowerBoundCost = inducedCost + areaQ;
 		if (lowerBoundCost <= bestCost)
 		{
-			b2CandidateNode candidate1;
+			dtCandidateNode candidate1;
 			candidate1.index = node.child1;
 			candidate1.inducedCost = inducedCost;
 
-			queue.push(candidate1);
+			m_heap.push_back(candidate1);
+			std::push_heap(m_heap.begin(), m_heap.end());
 
-			b2CandidateNode candidate2;
+			dtCandidateNode candidate2;
 			candidate2.index = node.child2;
 			candidate2.inducedCost = inducedCost;
 
-			queue.push(candidate2);
+			m_heap.push_back(candidate2);
+			std::push_heap(m_heap.begin(), m_heap.end());
 		}
 	}
 
@@ -1069,11 +1066,24 @@ void dtTree::WriteDot(const char* fileName) const
 
 			if (m_nodes[i].isLeaf)
 			{
-				fprintf(file, "node[shape=box, label=\"\"]\n");
+				fprintf(file, "%d [shape=box, width=0.05, height=0.05, label=\"\"]\n", i);
 			}
 			else
 			{
-				fprintf(file, "node[shape=point]\n");
+				fprintf(file, "%d [shape=point]\n", i);
+			}
+		}
+
+		for (int i = 0; i < m_nodeCapacity; ++i)
+		{
+			if (m_nodes[i].height == -1)
+			{
+				continue;
+			}
+
+			if (m_nodes[i].isLeaf)
+			{
+				continue;
 			}
 
 			fprintf(file, "%d -- %d\n", i, m_nodes[i].child1);
@@ -1087,6 +1097,29 @@ void dtTree::WriteDot(const char* fileName) const
 	{
 		fprintf(file, "graph\n");
 		fprintf(file, "{\n");
+		float totalArea = 0.0f;
+		for (int i = 0; i < m_nodeCapacity; ++i)
+		{
+			if (m_nodes[i].height == -1)
+			{
+				continue;
+			}
+
+			if (m_nodes[i].isLeaf)
+			{
+				fprintf(file, "%d [shape=point]\n", i);
+			}
+			else
+			{
+				float area = dtArea(m_nodes[i].aabb);
+				fprintf(file, "%d [shape=circle, label=\"%.f\"]\n", i, area);
+				if (i != m_root)
+				{
+					totalArea += area;
+				}
+			}
+		}
+
 		for (int i = 0; i < m_nodeCapacity; ++i)
 		{
 			if (m_nodes[i].height == -1)
@@ -1101,31 +1134,6 @@ void dtTree::WriteDot(const char* fileName) const
 
 			fprintf(file, "%d -- %d\n", i, m_nodes[i].child1);
 			fprintf(file, "%d -- %d\n", i, m_nodes[i].child2);
-		}
-
-		float totalArea = 0.0f;
-		for (int i = 0; i < m_nodeCapacity; ++i)
-		{
-			if (m_nodes[i].height == -1)
-			{
-				continue;
-			}
-
-			if (m_nodes[i].isLeaf)
-			{
-				//float area = m_nodes[i].aabb.GetPerimeter();
-				//fprintf(file, "%d [shape=box, label=\"%.f\"]\n", i, area);
-				fprintf(file, "%d [shape=point]\n", i);
-			}
-			else
-			{
-				float area = dtArea(m_nodes[i].aabb);
-				fprintf(file, "%d [shape=circle, label=\"%.f\"]\n", i, area);
-				if (i != m_root)
-				{
-					totalArea += area;
-				}
-			}
 		}
 
 		fprintf(file, "%d [shape=box, label=\"inner area = %.f\"]\n", m_nodeCapacity, totalArea);
