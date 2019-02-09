@@ -44,7 +44,7 @@ struct dtNode
 	int child1;
 	int child2;
 
-	// leaf = 0, free node = -1
+	// leaf = 0, free node = dt_nullNode
 	int height;
 
 	bool isLeaf;
@@ -78,11 +78,7 @@ struct dtTree
 	int CreateProxy(const dtAABB& aabb, bool rotate);
 
 	/// Destroy a proxy. This asserts if the id is invalid.
-	void DestroyProxy(int proxyId);
-
-	/// Move a proxy with a swepted AABB.
-	/// @return true if the proxy was re-inserted.
-	bool MoveProxy(int proxyId, const dtVec& displacement);
+	void DestroyProxy(int proxyId, bool rotate);
 
 	/// Get the fat AABB for a proxy.
 	const dtAABB& GetAABB(int proxyId) const;
@@ -115,7 +111,7 @@ struct dtTree
 	void InsertLeaf(int node, bool rotate);
 	void InsertLeafSAH(int node, bool rotate);
 	void InsertLeafManhattan(int node, bool rotate);
-	void RemoveLeaf(int node);
+	void RemoveLeaf(int node, bool rotate);
 
 	void Rotate(int index);
 

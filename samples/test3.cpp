@@ -1,7 +1,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "test.h"
+#include "draw.h"
+
 #include <stdio.h>
-#include <stdlib.h>
+#include <assert.h>
 
 struct Test3 : Test
 {
@@ -10,7 +12,7 @@ struct Test3 : Test
 		return "Overwatch Map";
 	}
 
-	void Load(const char* fileName)
+	bool Load(const char* fileName)
 	{
 		m_vertices = nullptr;
 		m_vertexCount = 0;
@@ -18,7 +20,7 @@ struct Test3 : Test
 		FILE* file = fopen(fileName, "r");
 		if (file == nullptr)
 		{
-			return;
+			return false;
 		}
 
 		const int k_bufferSize = 256;
@@ -55,21 +57,66 @@ struct Test3 : Test
 		}
 
 		fclose(file);
+
+		return true;
 	}
 
 	void Create(dtTreeHeuristic heuristic, bool rotate) override
 	{
 		m_tree.m_heuristic = heuristic;
-		Load("data/GibraltarTree.txt");
+		m_rotate = rotate;
 
-		int aabbCount = m_vertexCount / 2;
-		for (int i = 0; i < aabbCount; ++i)
+		bool success = Load("data/BlizzardLandTree.txt");
+		assert(success);
+
+		m_proxyCount = m_vertexCount / 2;
+		m_proxies = (int*)malloc(m_proxyCount * sizeof(int));
+
+		dtTimer timer;
+		for (int i = 0; i < m_proxyCount; ++i)
 		{
 			dtAABB box;
 			box.lowerBound = m_vertices[2 * i + 0];
 			box.upperBound = m_vertices[2 * i + 1];
-			m_tree.CreateProxy(box, rotate);
+			m_proxies[i] = m_tree.CreateProxy(box, m_rotate);
 		}
+		m_buildTime = timer.GetMilliseconds();
+
+		m_base = 0;
+	}
+
+	void Update(Draw& draw)
+	{
+		if (m_proxyCount == 0)
+		{
+			return;
+		}
+
+		const int count = 100;
+		dtTimer timer;
+		for (int i = 0; i < count; ++i)
+		{
+			int index = m_base;
+			m_tree.DestroyProxy(m_proxies[index], m_rotate);
+
+			dtAABB box;
+			box.lowerBound = m_vertices[2 * index + 0];
+			box.upperBound = m_vertices[2 * index + 1];
+			m_proxies[index] = m_tree.CreateProxy(box, m_rotate);
+
+			m_base += 1;
+			if (m_base == m_proxyCount)
+			{
+				m_base = 0;
+			}
+		}
+		float updateTime = timer.GetMilliseconds();
+
+		draw.DrawString(5, 45, "build time = %g, update time = %g", m_buildTime, updateTime);
+
+		int height = m_tree.GetHeight();
+		float area = m_tree.GetAreaRatio();
+		draw.DrawString(5, 60, "current height = %d, area = %g", height, area);
 	}
 
 	void Destroy() override
@@ -78,10 +125,18 @@ struct Test3 : Test
 		free(m_vertices);
 		m_vertices = nullptr;
 		m_vertexCount = 0;
+		free(m_proxies);
+		m_proxies = nullptr;
+		m_proxyCount = 0;
 	}
 
+	int m_base;
+	float m_buildTime;
+	int* m_proxies;
+	int m_proxyCount;
 	dtVec* m_vertices;
 	int m_vertexCount;
+	bool m_rotate;
 };
 
 static Test3 s_test;

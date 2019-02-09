@@ -37,6 +37,11 @@ inline int dtAbs(int a)
 	return a > 0 ? a : -a;
 }
 
+inline float dtAbs(float a)
+{
+	return a > 0.0f ? a : -a;
+}
+
 struct dtVec { float x, y, z, w; };
 
 static const dtVec dtVec_Zero = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -261,3 +266,24 @@ inline float dtArea(const dtAABB& a)
 	dtVec w = a.upperBound - a.lowerBound;
 	return 2.0f * (w.x * w.y + w.y * w.z + w.z * w.x);
 }
+
+class dtTimer
+{
+public:
+
+	/// Constructor
+	dtTimer();
+
+	/// Reset the timer.
+	void Reset();
+
+	/// Get the time since construction or the last reset.
+	float GetMilliseconds() const;
+
+private:
+
+#if defined(_WIN32)
+	double m_start;
+	static double s_invFrequency;
+#endif
+};

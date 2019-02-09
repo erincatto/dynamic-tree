@@ -22,6 +22,8 @@
 #include <algorithm>
 #include <assert.h>
 
+#define DT_VALIDATE 0
+
 dtTree::dtTree()
 {
 	m_root = dt_nullNode;
@@ -35,11 +37,11 @@ dtTree::dtTree()
 	for (int i = 0; i < m_nodeCapacity - 1; ++i)
 	{
 		m_nodes[i].next = i + 1;
-		m_nodes[i].height = -1;
+		m_nodes[i].height = dt_nullNode;
 	}
 
 	m_nodes[m_nodeCapacity-1].next = dt_nullNode;
-	m_nodes[m_nodeCapacity-1].height = -1;
+	m_nodes[m_nodeCapacity-1].height = dt_nullNode;
 
 	m_freeList = 0;
 	m_path = 0;
@@ -62,11 +64,11 @@ void dtTree::Clear()
 	for (int i = 0; i < m_nodeCapacity - 1; ++i)
 	{
 		m_nodes[i].next = i + 1;
-		m_nodes[i].height = -1;
+		m_nodes[i].height = dt_nullNode;
 	}
 
 	m_nodes[m_nodeCapacity - 1].next = dt_nullNode;
-	m_nodes[m_nodeCapacity - 1].height = -1;
+	m_nodes[m_nodeCapacity - 1].height = dt_nullNode;
 
 	m_freeList = 0;
 	m_path = 0;
@@ -100,10 +102,10 @@ int dtTree::AllocateNode()
 		for (int i = m_nodeCount; i < m_nodeCapacity - 1; ++i)
 		{
 			m_nodes[i].next = i + 1;
-			m_nodes[i].height = -1;
+			m_nodes[i].height = dt_nullNode;
 		}
 		m_nodes[m_nodeCapacity-1].next = dt_nullNode;
-		m_nodes[m_nodeCapacity-1].height = -1;
+		m_nodes[m_nodeCapacity-1].height = dt_nullNode;
 		m_freeList = m_nodeCount;
 	}
 
@@ -125,7 +127,7 @@ void dtTree::FreeNode(int nodeId)
 	assert(0 <= nodeId && nodeId < m_nodeCapacity);
 	assert(0 < m_nodeCount);
 	m_nodes[nodeId].next = m_freeList;
-	m_nodes[nodeId].height = -1;
+	m_nodes[nodeId].height = dt_nullNode;
 	m_freeList = nodeId;
 	--m_nodeCount;
 }
@@ -148,46 +150,13 @@ int dtTree::CreateProxy(const dtAABB& aabb, bool rotate)
 }
 
 //
-void dtTree::DestroyProxy(int proxyId)
+void dtTree::DestroyProxy(int proxyId, bool rotate)
 {
 	assert(0 <= proxyId && proxyId < m_nodeCapacity);
 	assert(m_nodes[proxyId].isLeaf);
 
-	RemoveLeaf(proxyId);
+	RemoveLeaf(proxyId, rotate);
 	FreeNode(proxyId);
-}
-
-bool dtTree::MoveProxy(int proxyId, const dtVec& d)
-{
-	assert(0 <= proxyId && proxyId < m_nodeCapacity);
-	assert(m_nodes[proxyId].isLeaf);
-
-	dtAABB b = m_nodes[proxyId].aabb;
-
-	RemoveLeaf(proxyId);
-
-	if (d.x < 0.0f)
-	{
-		b.lowerBound.x += d.x;
-	}
-	else
-	{
-		b.upperBound.x += d.x;
-	}
-
-	if (d.y < 0.0f)
-	{
-		b.lowerBound.y += d.y;
-	}
-	else
-	{
-		b.upperBound.y += d.y;
-	}
-
-	m_nodes[proxyId].aabb = b;
-
-	InsertLeaf(proxyId, true);
-	return true;
 }
 
 static inline bool operator < (const dtCandidateNode& a, const dtCandidateNode& b)
@@ -228,17 +197,14 @@ void dtTree::InsertLeafSAH(int leaf, bool rotate)
 
 		int index = candidate.index;
 		float inducedCost = candidate.inducedCost;
-
 		if (inducedCost + areaQ >= bestCost)
 		{
-			// Optimimum found
+			// Optimum found
 			break;
 		}
 
 		const dtNode& node = m_nodes[index];
-		dtAABB aabbG = dtUnion(node.aabb, aabbQ);
-
-		float directCost = dtArea(aabbG);
+		float directCost = dtArea(dtUnion(node.aabb, aabbQ));
 		float totalCost = inducedCost + directCost;
 
 		if (totalCost <= bestCost)
@@ -252,7 +218,7 @@ void dtTree::InsertLeafSAH(int leaf, bool rotate)
 			continue;
 		}
 
-		inducedCost = totalCost - dtArea(node.aabb);
+		inducedCost += directCost - dtArea(node.aabb);
 		float lowerBoundCost = inducedCost + areaQ;
 		if (lowerBoundCost <= bestCost)
 		{
@@ -271,6 +237,46 @@ void dtTree::InsertLeafSAH(int leaf, bool rotate)
 			std::push_heap(m_heap.begin(), m_heap.end());
 		}
 	}
+
+#if 0
+	// Compare with brute force
+	// Passed on BlizzardLand
+	float bestCost2 = FLT_MAX;
+	int bestSibling2 = dt_nullNode;
+	for (int i = 0; i < m_nodeCount; ++i)
+	{
+		if (i == leaf)
+		{
+			continue;
+		}
+
+		const dtNode& node = m_nodes[i];
+		if (node.height == dt_nullNode)
+		{
+			continue;
+		}
+
+		float cost = dtArea(dtUnion(aabbQ, node.aabb));
+		int parentIndex = node.parent;
+		while (parentIndex != dt_nullNode)
+		{
+			const dtNode& parent = m_nodes[parentIndex];
+			cost += dtArea(dtUnion(aabbQ, parent.aabb)) - dtArea(parent.aabb);
+			parentIndex = parent.parent;
+		}
+
+		if (cost < bestCost2)
+		{
+			bestCost2 = cost; 
+			bestSibling2 = i;
+		}
+	}
+
+	if (dtAbs(bestCost2 - bestCost) > 0.0001f + 0.0001f * dtAbs(bestCost))
+	{
+		bestCost2 += 0.0f;
+	}
+#endif
 
 	int sibling = bestSibling;
 
@@ -360,7 +366,7 @@ void dtTree::InsertLeafManhattan(int leaf, bool rotate)
 		int child1 = m_nodes[index].child1;
 		int child2 = m_nodes[index].child2;
 
-		// Manhattan distance heuristic from Bullet
+		// Manhattan distance heuristic from Presson
 		float C1 = dtManhattan(aabbQ, m_nodes[child1].aabb);
 		float C2 = dtManhattan(aabbQ, m_nodes[child2].aabb);
 
@@ -447,7 +453,7 @@ void dtTree::InsertLeaf(int node, bool rotate)
 	}
 }
 
-void dtTree::RemoveLeaf(int leaf)
+void dtTree::RemoveLeaf(int leaf, bool rotate)
 {
 	if (leaf == m_root)
 	{
@@ -494,7 +500,10 @@ void dtTree::RemoveLeaf(int leaf)
 			m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
 			m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
 
-			Rotate(index);
+			if (rotate)
+			{
+				Rotate(index);
+			}
 
 			index = m_nodes[index].parent;
 		}
@@ -506,7 +515,7 @@ void dtTree::RemoveLeaf(int leaf)
 		FreeNode(parent);
 	}
 
-	//Validate();
+	Validate();
 }
 
 enum b2TreeRotate
@@ -926,7 +935,7 @@ void dtTree::ValidateMetrics(int index) const
 
 void dtTree::Validate() const
 {
-#if defined(b2DEBUG)
+#if DT_VALIDATE == 1
 	ValidateStructure(m_root);
 	ValidateMetrics(m_root);
 

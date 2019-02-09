@@ -47,6 +47,9 @@ namespace
 	int g_testIndex = 0;
 	Test* g_test = nullptr;
 
+	int g_treeHeight = 0;
+	float g_treeArea = 0.0f;
+
 	dtTreeHeuristic g_heuristic = dt_surfaceAreaHeuristic;
 	bool g_showUI = true;
 	bool g_rotate = true;
@@ -76,6 +79,9 @@ static void InitTest(int index)
 	g_test = g_tests[index];
 	g_testIndex = index;
 	g_test->Create(g_heuristic, g_rotate);
+
+	g_treeArea = g_test->m_tree.GetAreaRatio();
+	g_treeHeight = g_test->m_tree.GetHeight();
 }
 
 static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -371,13 +377,13 @@ int main(int, char**)
 		ImGui::Begin("Overlay", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 		ImGui::End();
 
+		UpdateCamera();
+
 		g_draw.DrawString(5, 5, "Test %d: %s", g_testIndex, g_test->GetName());
 
 		char buffer[64];
-		sprintf(buffer, "height %d, area %g", g_test->m_tree.ComputeHeight(), g_test->m_tree.GetAreaRatio());
+		sprintf(buffer, "height %d, area %g", g_treeHeight, g_treeArea);
 		g_draw.DrawString(5, 30, buffer);
-
-		UpdateCamera();
 
 		Color color(0.3f, 0.3f, 0.8f);
 		for (int i = 0; i < g_test->m_tree.m_nodeCapacity; ++i)
@@ -400,6 +406,9 @@ int main(int, char**)
 
 		g_draw.DrawPoint(dtVec_Zero, 10.0f, Color(1.0f, 0.0f, 0.0f));
 		g_draw.DrawAxes();
+
+		g_test->Update(g_draw);
+
 		g_draw.Flush();
 
 		DrawUI();
