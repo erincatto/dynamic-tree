@@ -66,11 +66,13 @@ static void InitTestArray()
 	extern Test* g_test1;
 	extern Test* g_test2;
 	extern Test* g_test3;
+	extern Test* g_test4;
 
 	g_tests[0] = g_test1;
 	g_tests[1] = g_test2;
 	g_tests[2] = g_test3;
-	g_testCount = 3;
+	g_tests[3] = g_test4;
+	g_testCount = 4;
 }
 
 static void InitTest(int index)
