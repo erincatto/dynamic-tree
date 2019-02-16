@@ -1,5 +1,6 @@
 set(DYNTREE_SOURCE_FILES
-	tree.cpp)
+	tree.cpp
+	utils.cpp)
 
 set(DYNTREE_HEADER_FILES
 	../include/dynamic-tree/utils.h

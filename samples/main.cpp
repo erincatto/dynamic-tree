@@ -52,6 +52,7 @@ namespace
 
 	dtTreeHeuristic g_heuristic = dt_surfaceAreaHeuristic;
 	bool g_showUI = true;
+	bool g_showTestPicker = false;
 	bool g_rotate = true;
 	bool g_drawInternal = true;
 }
@@ -209,10 +210,17 @@ static void DrawUI()
 	ImGui::SetNextWindowPos(ImVec2(g_camera.m_ws - menuWidth - 10.0f, 10.0f));
 	ImGui::SetNextWindowSize(ImVec2(menuWidth, g_camera.m_hs - 20.0f));
 	ImGui::Begin("Controls", &g_showUI, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-	ImGui::PushAllowKeyboardFocus(false);
 
-	bool changed = ImGui::Checkbox("Rotate", &g_rotate);
-	if (changed)
+	bool testPicker = ImGui::Button("Test Picker");
+	if (testPicker)
+	{
+		g_showTestPicker = true;
+	}
+
+	ImGui::Separator();
+
+	bool rotate = ImGui::Checkbox("Rotate", &g_rotate);
+	if (rotate)
 	{
 		InitTest(g_testIndex);
 	}
@@ -242,8 +250,26 @@ static void DrawUI()
 		glfwSetWindowShouldClose(g_window, GL_TRUE);
 	}
 
-	ImGui::PopAllowKeyboardFocus();
 	ImGui::End();
+
+	if (g_showTestPicker)
+	{
+		ImGui::SetNextWindowPos(ImVec2(g_camera.m_ws - 2.0f * (menuWidth + 10.0f), 10.0f));
+		ImGui::SetNextWindowSize(ImVec2(menuWidth, g_camera.m_hs - 20.0f));
+		ImGui::Begin("Test Picker", &g_showUI, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+
+		if (ImGui::CollapsingHeader("Basic"))
+		{
+
+		}
+
+		if (ImGui::CollapsingHeader("Benchmark"))
+		{
+
+		}
+
+		ImGui::End();
+	}
 }
 
 static void Resize(GLFWwindow*, int w, int h)
@@ -414,6 +440,8 @@ int main(int, char**)
 		g_draw.Flush();
 
 		DrawUI();
+
+		ImGui::ShowDemoWindow();
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -8,7 +8,8 @@ set (SAMPLE_SOURCE_FILES
 	main.cpp
 	test1.cpp
 	test2.cpp
-	test3.cpp)
+	test3.cpp
+	test4.cpp)
 
 set (SAMPLE_HEADER_FILES
 	khrplatform.h

@@ -4,5 +4,6 @@ svg-inkscape/
 *.gz
 *.log
 *.blg
+*.ini
 build/
 
