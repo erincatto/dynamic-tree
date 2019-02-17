@@ -11,17 +11,15 @@
 
 #pragma once
 
-#include "dynamic-tree/tree.h"
-
-struct Draw;
-
-struct Test
+struct Settings
 {
-	virtual const char* GetCategory() const = 0;
-	virtual const char* GetName() const = 0;
-	virtual void Create(dtTreeHeuristic heuristic, bool rotate) = 0;
-	virtual void Destroy() = 0;
-	virtual void Update(Draw&) {}
+	Settings()
+	{
+		m_testIndex = 0;
+	}
 
-	dtTree m_tree;
+	void Save();
+	void Load();
+
+	int m_testIndex;
 };

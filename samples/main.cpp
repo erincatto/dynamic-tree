@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2006-2007 Erin Catto http://www.gphysics.com
+* Copyright (c) 2019 Erin Catto http://www.box2d.org
 *
 * Permission to use, copy, modify, distribute and sell this software
 * and its documentation for any purpose is hereby granted without fee,
@@ -20,6 +20,9 @@
 #endif
 
 #include "glfw/glfw3.h"
+
+#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS 1
+
 #include "imgui/imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -27,7 +30,21 @@
 #include "dynamic-tree/tree.h"
 
 #include "draw.h"
+#include "settings.h"
 #include "test.h"
+
+#include <algorithm>
+
+bool CompareTests(const Test* a, const Test* b)
+{
+	int result = strcmp(a->GetCategory(), b->GetCategory());
+	if (result == 0)
+	{
+		result = strcmp(a->GetName(), b->GetName());
+	}
+
+	return result < 0;
+}
 
 namespace
 {
@@ -35,6 +52,7 @@ namespace
 
 	Draw g_draw;
 	Camera& g_camera = g_draw.m_camera;
+	Settings g_settings;
 
 	float g_mouseX = 0.0f;
 	float g_mouseY = 0.0f;
@@ -44,15 +62,12 @@ namespace
 
 	Test* g_tests[128];
 	int g_testCount = 0;
-	int g_testIndex = 0;
 	Test* g_test = nullptr;
 
 	int g_treeHeight = 0;
 	float g_treeArea = 0.0f;
 
 	dtTreeHeuristic g_heuristic = dt_surfaceAreaHeuristic;
-	bool g_showUI = true;
-	bool g_showTestPicker = false;
 	bool g_rotate = true;
 	bool g_drawInternal = true;
 }
@@ -73,14 +88,17 @@ static void InitTestArray()
 	g_tests[1] = g_test2;
 	g_tests[2] = g_test3;
 	g_tests[3] = g_test4;
+	std::sort(g_tests, g_tests + g_testCount, CompareTests);
 	g_testCount = 4;
 }
 
 static void InitTest(int index)
 {
-	g_tests[g_testIndex]->Destroy();
-	g_test = g_tests[index];
-	g_testIndex = index;
+	g_tests[g_settings.m_testIndex]->Destroy();
+
+	g_settings.m_testIndex = dtClamp(index, 0, g_testCount - 1);
+
+	g_test = g_tests[g_settings.m_testIndex];
 	g_test->Create(g_heuristic, g_rotate);
 
 	g_treeArea = g_test->m_tree.GetAreaRatio();
@@ -101,16 +119,20 @@ static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int 
 		glfwSetWindowShouldClose(g_window, GL_TRUE);
 		break;
 
+	case GLFW_KEY_TAB:
+		g_draw.m_showUI = !g_draw.m_showUI;
+		break;
+
 	case GLFW_KEY_LEFT_BRACKET:
 		{
-			int testIndex = dtMax(0, g_testIndex - 1);
+			int testIndex = dtMax(0, g_settings.m_testIndex - 1);
 			InitTest(testIndex);
 		}
 		break;
 
 	case GLFW_KEY_RIGHT_BRACKET:
 		{
-			int testIndex = dtMin(g_testCount - 1, g_testIndex + 1);
+			int testIndex = dtMin(g_testCount - 1, g_settings.m_testIndex + 1);
 			InitTest(testIndex);
 		}
 		break;
@@ -201,7 +223,7 @@ static void UpdateCamera()
 
 static void DrawUI()
 {
-	if (g_showUI == false)
+	if (g_draw.m_showUI == false)
 	{
 		return;
 	}
@@ -209,67 +231,105 @@ static void DrawUI()
 	float menuWidth = 200.0f;
 	ImGui::SetNextWindowPos(ImVec2(g_camera.m_ws - menuWidth - 10.0f, 10.0f));
 	ImGui::SetNextWindowSize(ImVec2(menuWidth, g_camera.m_hs - 20.0f));
-	ImGui::Begin("Controls", &g_showUI, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+	ImGui::Begin("##Controls", &g_draw.m_showUI, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 
-	bool testPicker = ImGui::Button("Test Picker");
-	if (testPicker)
+	ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
+	if (ImGui::BeginTabBar("ControlTabs", tab_bar_flags))
 	{
-		g_showTestPicker = true;
+		if (ImGui::BeginTabItem("Controls"))
+		{
+			bool rotate = ImGui::Checkbox("Rotate", &g_rotate);
+			if (rotate)
+			{
+				InitTest(g_settings.m_testIndex);
+			}
+
+			ImGui::Checkbox("Draw Internal", &g_drawInternal);
+
+			ImGui::Separator();
+			static int heuristic = int(g_heuristic);
+			ImGui::RadioButton("SAH", &heuristic, int(dt_surfaceAreaHeuristic));
+			ImGui::RadioButton("Manhattan", &heuristic, int(dt_manhattanHeuristic));
+			if (heuristic != g_heuristic)
+			{
+				g_heuristic = dtTreeHeuristic(heuristic);
+				InitTest(g_settings.m_testIndex);
+			}
+			ImGui::Separator();
+
+			if (ImGui::Button("Write Dot"))
+			{
+				g_test->m_tree.WriteDot("dot.txt");
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::Button("Quit"))
+			{
+				glfwSetWindowShouldClose(g_window, GL_TRUE);
+			}			ImGui::EndTabItem();
+		}
+
+		if (g_testCount == 0)
+		{
+			return;
+		}
+
+		ImGuiTreeNodeFlags leafNodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+		leafNodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+		ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+
+		if (ImGui::BeginTabItem("Tests"))
+		{
+			int categoryIndex = 0;
+			const char* category = g_tests[categoryIndex]->GetCategory();
+			int i = 0;
+			while (i < g_testCount)
+			{
+				bool categorySelected = strcmp(category, g_tests[g_settings.m_testIndex]->GetCategory()) == 0;
+				ImGuiTreeNodeFlags nodeSelectionFlags = categorySelected ? ImGuiTreeNodeFlags_Selected : 0;
+				bool nodeOpen = ImGui::TreeNodeEx(category, nodeFlags | nodeSelectionFlags);
+
+				if (nodeOpen)
+				{
+					while (i < g_testCount && strcmp(category, g_tests[i]->GetCategory()) == 0)
+					{
+						ImGuiTreeNodeFlags selectionFlags = 0;
+						if (g_settings.m_testIndex == i)
+						{
+							selectionFlags = ImGuiTreeNodeFlags_Selected;
+						}
+						ImGui::TreeNodeEx((void*)(intptr_t)i, leafNodeFlags | selectionFlags, "%s", g_tests[i]->GetName());
+						if (ImGui::IsItemClicked())
+						{
+							InitTest(i);
+						}
+						++i;
+					}
+					ImGui::TreePop();
+				}
+				else
+				{
+					while (i < g_testCount && strcmp(category, g_tests[i]->GetCategory()) == 0)
+					{
+						++i;
+					}
+				}
+
+				if (i < g_testCount)
+				{
+					category = g_tests[i]->GetCategory();
+					categoryIndex = i;
+				}
+			}
+			ImGui::EndTabItem();
+		}
+		ImGui::EndTabBar();
 	}
 
 	ImGui::Separator();
-
-	bool rotate = ImGui::Checkbox("Rotate", &g_rotate);
-	if (rotate)
-	{
-		InitTest(g_testIndex);
-	}
-
-	ImGui::Checkbox("Draw Internal", &g_drawInternal);
-
-	ImGui::Separator();
-	static int heuristic = int(g_heuristic);
-	ImGui::RadioButton("SAH", &heuristic, int(dt_surfaceAreaHeuristic));
-	ImGui::RadioButton("Manhattan", &heuristic, int(dt_manhattanHeuristic));
-	if (heuristic != g_heuristic)
-	{
-		g_heuristic = dtTreeHeuristic(heuristic);
-		InitTest(g_testIndex);
-	}
-	ImGui::Separator();
-
-	if (ImGui::Button("Write Dot"))
-	{
-		g_test->m_tree.WriteDot("dot.txt");
-	}
-
-	ImGui::Separator();
-
-	if (ImGui::Button("Quit"))
-	{
-		glfwSetWindowShouldClose(g_window, GL_TRUE);
-	}
-
 	ImGui::End();
-
-	if (g_showTestPicker)
-	{
-		ImGui::SetNextWindowPos(ImVec2(g_camera.m_ws - 2.0f * (menuWidth + 10.0f), 10.0f));
-		ImGui::SetNextWindowSize(ImVec2(menuWidth, g_camera.m_hs - 20.0f));
-		ImGui::Begin("Test Picker", &g_showUI, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-
-		if (ImGui::CollapsingHeader("Basic"))
-		{
-
-		}
-
-		if (ImGui::CollapsingHeader("Benchmark"))
-		{
-
-		}
-
-		ImGui::End();
-	}
 }
 
 static void Resize(GLFWwindow*, int w, int h)
@@ -279,6 +339,8 @@ static void Resize(GLFWwindow*, int w, int h)
 
 int main(int, char**)
 {
+	g_settings.Load();
+
 	GLenum glError;
 
 	glfwSetErrorCallback(glfwErrorCallback);
@@ -364,7 +426,7 @@ int main(int, char**)
 	glViewport(0, 0, g_width, g_height);
 
 	InitTestArray();
-	InitTest(0);
+	InitTest(g_settings.m_testIndex);
 
 	const int colorCount = 12;
 	Color colors[colorCount] =
@@ -396,22 +458,25 @@ int main(int, char**)
 		glfwGetFramebufferSize(g_window, &g_width, &g_height);
 		glViewport(0, 0, g_width, g_height);
 
+		UpdateCamera();
+
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 
 		// Globally position text
-		ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
-		ImGui::Begin("Overlay", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-		ImGui::End();
+		if (g_draw.m_showUI)
+		{
+			ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
+			ImGui::Begin("Overlay", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+			ImGui::End();
 
-		UpdateCamera();
+			g_draw.DrawString(5, 5, "%s", g_test->GetName());
 
-		g_draw.DrawString(5, 5, "Test %d: %s", g_testIndex, g_test->GetName());
-
-		char buffer[64];
-		sprintf(buffer, "height %d, area %g", g_treeHeight, g_treeArea);
-		g_draw.DrawString(5, 30, buffer);
+			char buffer[64];
+			sprintf(buffer, "height %d, area %g", g_treeHeight, g_treeArea);
+			g_draw.DrawString(5, 30, buffer);
+		}
 
 		Color color(0.3f, 0.3f, 0.8f);
 		for (int i = 0; i < g_test->m_tree.m_nodeCapacity; ++i)
@@ -441,7 +506,7 @@ int main(int, char**)
 
 		DrawUI();
 
-		ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -459,5 +524,6 @@ int main(int, char**)
 
 	g_draw.Destroy();
 	glfwTerminate();
+	g_settings.Save();
 	return 0;
 }
