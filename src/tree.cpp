@@ -22,6 +22,7 @@ dtTree::dtTree()
 	m_root = dt_nullNode;
 	m_nodeCapacity = 16;
 	m_nodeCount = 0;
+	m_proxyCount = 0;
 
 	m_nodes = (dtNode*)malloc(m_nodeCapacity * sizeof(dtNode));
 	memset(m_nodes, 0, m_nodeCapacity * sizeof(dtNode));
@@ -53,6 +54,7 @@ void dtTree::Clear()
 {
 	m_root = dt_nullNode;
 	m_nodeCount = 0;
+	m_proxyCount = 0;
 
 	for (int i = 0; i < m_nodeCapacity - 1; ++i)
 	{
@@ -139,6 +141,8 @@ int dtTree::CreateProxy(const dtAABB& aabb, bool rotate)
 
 	InsertLeaf(proxyId, rotate);
 
+	++m_proxyCount;
+
 	return proxyId;
 }
 
@@ -150,6 +154,8 @@ void dtTree::DestroyProxy(int proxyId, bool rotate)
 
 	RemoveLeaf(proxyId, rotate);
 	FreeNode(proxyId);
+
+	--m_proxyCount;
 }
 
 static inline bool operator < (const dtCandidateNode& a, const dtCandidateNode& b)
@@ -770,6 +776,11 @@ void dtTree::Rotate(int iA)
 			break;
 		}
 	}
+}
+
+int dtTree::GetProxyCount() const
+{
+	return m_proxyCount;
 }
 
 int dtTree::GetHeight() const

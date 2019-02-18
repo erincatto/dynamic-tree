@@ -116,7 +116,7 @@ struct Test4 : Test
 		}
 		float updateTime = timer.GetMilliseconds();
 
-		draw.DrawString(5, 45, "build time = %g, update time = %g", m_buildTime, updateTime);
+		draw.DrawString(5, 45, "build time = %5.2fg, update time = %4.2f", m_buildTime, updateTime);
 
 		int height = m_tree.GetHeight();
 		float area = m_tree.GetAreaRatio();

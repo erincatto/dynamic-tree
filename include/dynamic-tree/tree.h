@@ -79,8 +79,10 @@ struct dtTree
 	/// Validate this tree. For testing.
 	void Validate() const;
 
-	/// Compute the height of the binary tree in O(N) time. Should not be
-	/// called often.
+	/// Get the proxy/leaf count
+	int GetProxyCount() const;
+
+	/// Get the cached height.
 	int GetHeight() const;
 
 	/// Get the maximum balance of an node in the tree. The balance is the difference
@@ -119,6 +121,7 @@ struct dtTree
 	dtNode* m_nodes;
 	int m_nodeCount;
 	int m_nodeCapacity;
+	int m_proxyCount;
 
 	int m_freeList;
 

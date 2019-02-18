@@ -64,6 +64,7 @@ namespace
 	int g_testCount = 0;
 	Test* g_test = nullptr;
 
+	int g_proxyCount = 0;
 	int g_treeHeight = 0;
 	float g_treeArea = 0.0f;
 
@@ -101,8 +102,9 @@ static void InitTest(int index)
 	g_test = g_tests[g_settings.m_testIndex];
 	g_test->Create(g_heuristic, g_rotate);
 
-	g_treeArea = g_test->m_tree.GetAreaRatio();
+	g_proxyCount = g_test->m_tree.GetProxyCount();
 	g_treeHeight = g_test->m_tree.GetHeight();
+	g_treeArea = g_test->m_tree.GetAreaRatio();
 }
 
 static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -422,7 +424,7 @@ int main(int, char**)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_DEPTH_TEST);
-	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glViewport(0, 0, g_width, g_height);
 
 	InitTestArray();
@@ -474,7 +476,7 @@ int main(int, char**)
 			g_draw.DrawString(5, 5, "%s", g_test->GetName());
 
 			char buffer[64];
-			sprintf(buffer, "height %d, area %g", g_treeHeight, g_treeArea);
+			sprintf(buffer, "proxies %d, height %d, area %g", g_proxyCount, g_treeHeight, g_treeArea);
 			g_draw.DrawString(5, 30, buffer);
 		}
 
@@ -497,7 +499,6 @@ int main(int, char**)
 			g_draw.DrawBox(n.aabb, extension, color);
 		}
 
-		g_draw.DrawPoint(dtVec_Zero, 10.0f, Color(1.0f, 0.0f, 0.0f));
 		g_draw.DrawAxes();
 
 		g_test->Update(g_draw);
