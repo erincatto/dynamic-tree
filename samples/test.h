@@ -21,7 +21,7 @@ struct Test
 	virtual const char* GetName() const = 0;
 	virtual void Create(dtTreeHeuristic heuristic, bool rotate) = 0;
 	virtual void Destroy() = 0;
-	virtual void Update(Draw&) {}
+	virtual void Update(Draw&, int /* reinsertIter */, int /* shuffleIter */) {}
 
 	dtTree m_tree;
 };

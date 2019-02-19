@@ -89,7 +89,7 @@ struct Test4 : Test
 		m_base = 0;
 	}
 
-	void Update(Draw& draw)
+	void Update(Draw& draw, int reinsertIter, int shuffleIter) override
 	{
 		int proxyCount = int(m_proxies.size());
 
@@ -98,9 +98,8 @@ struct Test4 : Test
 			return;
 		}
 
-		const int count = 0;
 		dtTimer timer;
-		for (int i = 0; i < count; ++i)
+		for (int i = 0; i < reinsertIter; ++i)
 		{
 			int index = m_base;
 			dtAABB cube = m_tree.GetAABB(m_proxies[index]);
@@ -114,13 +113,16 @@ struct Test4 : Test
 				m_base = 0;
 			}
 		}
+
+		m_tree.Optimize(shuffleIter);
+
 		float updateTime = timer.GetMilliseconds();
 
-		draw.DrawString(5, 45, "build time = %5.2fg, update time = %4.2f", m_buildTime, updateTime);
+		draw.DrawString(5, 50, "build time = %5.2fg, update time = %4.2f", m_buildTime, updateTime);
 
 		int height = m_tree.GetHeight();
 		float area = m_tree.GetAreaRatio();
-		draw.DrawString(5, 60, "current height = %d, area = %g", height, area);
+		draw.DrawString(5, 65, "current height = %d, area = %g", height, area);
 	}
 
 	void Destroy() override

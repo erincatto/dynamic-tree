@@ -71,6 +71,9 @@ namespace
 	dtTreeHeuristic g_heuristic = dt_surfaceAreaHeuristic;
 	bool g_rotate = true;
 	bool g_drawInternal = true;
+
+	int g_reinsertIter = 0;
+	int g_shuffleIter = 0;
 }
 
 static void glfwErrorCallback(int error, const char* description)
@@ -246,9 +249,9 @@ static void DrawUI()
 				InitTest(g_settings.m_testIndex);
 			}
 
-			ImGui::Checkbox("Draw Internal", &g_drawInternal);
+			ImGui::SliderInt("Reinsert Iter", &g_reinsertIter, 0, 100);
+			ImGui::SliderInt("Shuffle Iter", &g_shuffleIter, 0, 100);
 
-			ImGui::Separator();
 			static int heuristic = int(g_heuristic);
 			ImGui::RadioButton("SAH", &heuristic, int(dt_surfaceAreaHeuristic));
 			ImGui::RadioButton("Manhattan", &heuristic, int(dt_manhattanHeuristic));
@@ -257,8 +260,10 @@ static void DrawUI()
 				g_heuristic = dtTreeHeuristic(heuristic);
 				InitTest(g_settings.m_testIndex);
 			}
+
 			ImGui::Separator();
 
+			ImGui::Checkbox("Draw Internal", &g_drawInternal);
 			if (ImGui::Button("Write Dot"))
 			{
 				g_test->m_tree.WriteDot("dot.txt");
@@ -477,7 +482,11 @@ int main(int, char**)
 
 			char buffer[64];
 			sprintf(buffer, "proxies %d, height %d, area %g", g_proxyCount, g_treeHeight, g_treeArea);
-			g_draw.DrawString(5, 30, buffer);
+			g_draw.DrawString(5, 20, buffer);
+
+			const dtTree& tree = g_test->m_tree;
+			sprintf(buffer, "BF %d, BF %d, CD %d, CE %d", tree.m_countBF, tree.m_countBG, tree.m_countCD, tree.m_countCE);
+			g_draw.DrawString(5, 35, buffer);
 		}
 
 		Color color(0.3f, 0.3f, 0.8f);
@@ -501,7 +510,7 @@ int main(int, char**)
 
 		g_draw.DrawAxes();
 
-		g_test->Update(g_draw);
+		g_test->Update(g_draw, g_reinsertIter, g_shuffleIter);
 
 		g_draw.Flush();
 

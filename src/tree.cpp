@@ -38,6 +38,12 @@ dtTree::dtTree()
 	m_nodes[m_nodeCapacity-1].height = dt_nullNode;
 
 	m_freeList = 0;
+
+	m_countBF = 0;
+	m_countBG = 0;
+	m_countCD = 0;
+	m_countCE = 0;
+
 	m_path = 0;
 	m_insertionCount = 0;
 	m_heap.reserve(128);
@@ -517,13 +523,13 @@ void dtTree::RemoveLeaf(int leaf, bool rotate)
 	Validate();
 }
 
-enum b2TreeRotate
+enum dtTreeRotate
 {
-	b2_rotateNone,
-	b2_rotateBF,
-	b2_rotateBG,
-	b2_rotateCD,
-	b2_rotateCE
+	dt_rotateNone,
+	dt_rotateBF,
+	dt_rotateBG,
+	dt_rotateCD,
+	dt_rotateCE
 };
 
 // Perform a left or right rotation if node A is imbalanced.
@@ -587,6 +593,8 @@ void dtTree::Rotate(int iA)
 			C->aabb = aabbBG;
 			C->height = 1 + dtMax(B->height, G->height);
 			A->height = 1 + dtMax(C->height, F->height);
+
+			++m_countBF;
 		}
 		else
 		{
@@ -600,6 +608,8 @@ void dtTree::Rotate(int iA)
 			C->aabb = aabbBF;
 			C->height = 1 + dtMax(B->height, F->height);
 			A->height = 1 + dtMax(C->height, G->height);
+
+			++m_countBG;
 		}
 	}
 	else if (C->height == 0)
@@ -643,6 +653,8 @@ void dtTree::Rotate(int iA)
 			B->aabb = aabbCE;
 			B->height = 1 + dtMax(C->height, E->height);
 			A->height = 1 + dtMax(B->height, D->height);
+
+			++m_countCD;
 		}
 		else
 		{
@@ -656,6 +668,8 @@ void dtTree::Rotate(int iA)
 			B->aabb = aabbCD;
 			B->height = 1 + dtMax(C->height, D->height);
 			A->height = 1 + dtMax(B->height, E->height);
+
+			++m_countCE;
 		}
 	}
 	else
@@ -679,7 +693,7 @@ void dtTree::Rotate(int iA)
 		float areaB = dtArea(B->aabb);
 		float areaC = dtArea(C->aabb);
 		float costBase = areaB + areaC;
-		b2TreeRotate bestRotation = b2_rotateNone;
+		dtTreeRotate bestRotation = dt_rotateNone;
 		float bestCost = costBase;
 
 		// Cost of swapping B and F
@@ -687,7 +701,7 @@ void dtTree::Rotate(int iA)
 		float costBF = areaB + dtArea(aabbBG);
 		if (costBF < bestCost)
 		{
-			bestRotation = b2_rotateBF;
+			bestRotation = dt_rotateBF;
 			bestCost = costBF;
 		}
 
@@ -696,7 +710,7 @@ void dtTree::Rotate(int iA)
 		float costBG = areaB + dtArea(aabbBF);
 		if (costBG < bestCost)
 		{
-			bestRotation = b2_rotateBG;
+			bestRotation = dt_rotateBG;
 			bestCost = costBG;
 		}
 
@@ -705,7 +719,7 @@ void dtTree::Rotate(int iA)
 		float costCD = areaC + dtArea(aabbCE);
 		if (costCD < bestCost)
 		{
-			bestRotation = b2_rotateCD;
+			bestRotation = dt_rotateCD;
 			bestCost = costCD;
 		}
 
@@ -714,16 +728,16 @@ void dtTree::Rotate(int iA)
 		float costCE = areaC + dtArea(aabbCD);
 		if (costCE < bestCost)
 		{
-			bestRotation = b2_rotateCE;
+			bestRotation = dt_rotateCE;
 			bestCost = costCE;
 		}
 
 		switch (bestRotation)
 		{
-		case b2_rotateNone:
+		case dt_rotateNone:
 			break;
 
-		case b2_rotateBF:
+		case dt_rotateBF:
 			A->child1 = iF;
 			C->child1 = iB;
 
@@ -733,9 +747,11 @@ void dtTree::Rotate(int iA)
 			C->aabb = aabbBG;
 			C->height = 1 + dtMax(B->height, G->height);
 			A->height = 1 + dtMax(C->height, F->height);
+
+			++m_countBF;
 			break;
 
-		case b2_rotateBG:
+		case dt_rotateBG:
 			A->child1 = iG;
 			C->child2 = iB;
 
@@ -745,9 +761,11 @@ void dtTree::Rotate(int iA)
 			C->aabb = aabbBF;
 			C->height = 1 + dtMax(B->height, F->height);
 			A->height = 1 + dtMax(C->height, G->height);
+
+			++m_countBG;
 			break;
 
-		case b2_rotateCD:
+		case dt_rotateCD:
 			A->child2 = iD;
 			B->child1 = iC;
 
@@ -757,9 +775,11 @@ void dtTree::Rotate(int iA)
 			B->aabb = aabbCE;
 			B->height = 1 + dtMax(C->height, E->height);
 			A->height = 1 + dtMax(B->height, D->height);
+
+			++m_countCD;
 			break;
 
-		case b2_rotateCE:
+		case dt_rotateCE:
 			A->child2 = iE;
 			B->child2 = iC;
 
@@ -769,12 +789,96 @@ void dtTree::Rotate(int iA)
 			B->aabb = aabbCD;
 			B->height = 1 + dtMax(C->height, D->height);
 			A->height = 1 + dtMax(B->height, E->height);
+
+			++m_countCE;
 			break;
 
 		default:
 			assert(false);
 			break;
 		}
+	}
+}
+
+void dtTree::Shuffle(int index)
+{
+	dtNode& A = m_nodes[index];
+	assert(A.child1 != dt_nullNode && A.child2 != dt_nullNode && A.isLeaf == false);
+
+	dtNode& B = m_nodes[A.child1];
+	dtNode& C = m_nodes[A.child2];
+
+	if (B.isLeaf || C.isLeaf)
+	{
+		return;
+	}
+
+	assert(B.child1 != dt_nullNode && B.child2 != dt_nullNode);
+	assert(C.child1 != dt_nullNode && C.child2 != dt_nullNode);
+
+	dtNode& D = m_nodes[B.child1];
+	dtNode& E = m_nodes[B.child2];
+	dtNode& F = m_nodes[C.child1];
+	dtNode& G = m_nodes[C.child2];
+
+	float costBase = dtArea(B.aabb) + dtArea(C.aabb);
+
+	dtAABB DF = dtUnion(D.aabb, F.aabb);
+	dtAABB DG = dtUnion(D.aabb, G.aabb);
+	dtAABB EF = dtUnion(E.aabb, F.aabb);
+	dtAABB EG = dtUnion(E.aabb, G.aabb);
+
+	float costDF = dtArea(DF) + dtArea(EG);
+	float costDG = dtArea(DG) + dtArea(EF);
+
+	if (costDF > costBase && costDG > costBase)
+	{
+		return;
+	}
+
+	if (costDF < costDG)
+	{
+		dtSwap(B.child2, C.child1);
+		F.parent = A.child1;
+		E.parent = A.child2;
+		B.aabb = DF;
+		C.aabb = EG;
+		B.height = 1 + dtMax(D.height, F.height);
+		C.height = 1 + dtMax(E.height, G.height);
+	}
+	else
+	{
+		dtSwap(B.child2, C.child2);
+		G.parent = A.child1;
+		E.parent = A.child2;
+		B.aabb = DG;
+		C.aabb = EF;
+		B.height = 1 + dtMax(D.height, G.height);
+		C.height = 1 + dtMax(E.height, F.height);
+	}
+}
+
+void dtTree::Optimize(int iterations)
+{
+	for (int i = 0; i < iterations; ++i)
+	{
+		if (m_path > m_nodeCapacity)
+		{
+			m_path = 0;
+		}
+
+		while (m_nodes[m_path].height == dt_nullNode || m_nodes[m_path].height < 2)
+		{
+			++m_path;
+			if (m_path > m_nodeCapacity)
+			{
+				m_path = 0;
+			}
+		}
+
+		Shuffle(m_path);
+
+		++m_path;
 	}
 }
 

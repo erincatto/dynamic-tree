@@ -40,6 +40,13 @@ inline float dtAbs(float a)
 	return a > 0.0f ? a : -a;
 }
 
+inline void dtSwap(int& a, int& b)
+{
+	int t = a;
+	a = b;
+	b = t;
+}
+
 struct dtVec { float x, y, z, w; };
 
 static const dtVec dtVec_Zero = { 0.0f, 0.0f, 0.0f, 0.0f };

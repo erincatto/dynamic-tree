@@ -101,16 +101,15 @@ struct Test3 : Test
 		m_base = 0;
 	}
 
-	void Update(Draw& draw)
+	void Update(Draw& draw, int reinsertIter, int shuffleIter) override
 	{
 		if (m_proxyCount == 0)
 		{
 			return;
 		}
 
-		const int count = 100;
 		dtTimer timer;
-		for (int i = 0; i < count; ++i)
+		for (int i = 0; i < reinsertIter; ++i)
 		{
 			int index = m_base;
 			m_tree.DestroyProxy(m_proxies[index], m_rotate);
@@ -126,13 +125,16 @@ struct Test3 : Test
 				m_base = 0;
 			}
 		}
+
+		m_tree.Optimize(shuffleIter);
+
 		float updateTime = timer.GetMilliseconds();
 
-		draw.DrawString(5, 45, "build time = %6.2f, update time = %5.2f", m_buildTime, updateTime);
+		draw.DrawString(5, 50, "build time = %6.2f, update time = %5.2f", m_buildTime, updateTime);
 
 		int height = m_tree.GetHeight();
 		float area = m_tree.GetAreaRatio();
-		draw.DrawString(5, 60, "current height = %d, area = %g", height, area);
+		draw.DrawString(5, 65, "current height = %d, area = %g", height, area);
 	}
 
 	void Destroy() override

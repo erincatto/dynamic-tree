@@ -110,6 +110,9 @@ struct dtTree
 
 	void Rotate(int index);
 
+	void Optimize(int iterations);
+	void Shuffle(int index);
+
 	int ComputeHeight() const;
 	int ComputeHeight(int nodeId) const;
 
@@ -125,8 +128,13 @@ struct dtTree
 
 	int m_freeList;
 
+	int m_countBF;
+	int m_countBG;
+	int m_countCD;
+	int m_countCE;
+
 	/// This is used to incrementally traverse the tree for re-balancing.
-	unsigned m_path;
+	int m_path;
 
 	int m_insertionCount;
 
