@@ -33,18 +33,18 @@ frame=single,
 
 \begin{document}
 
-\title{Dynamic Trees}
+\title{Dynamic AABB Trees}
 \author{Erin Catto\\Blizzard Entertainment}
 \maketitle
 
 \begin{abstract}
 \small
-This document presents techniques for using dynamic AABB trees in games to handle incremental updates to the tree structure. Tree insertions are optimized using the Surface Area Heuristic combined with sub-tree rotations. The tree is also optimized in an iterative fashion using rotations and shuffle operations.
+This document presents techniques for using dynamic AABB trees in games. The surface area heuristic is used as the cost metric for tree insertions. An efficient branch and bound search is used to find the globally best insertion location. Tree rotations are used to prevent poorly formed trees in the case of sorted input, which is typical in authoring tools and procedural generation of game environments.
 \end{abstract}
 
 \section{Introduction}
 
-Physics engines for games usually have a \emph{broad-phase} to accelerate ray casts, shape casts, and overlap tests. Typically there are many independently moving objects along with that static environment that need to be considered. Furthermore, steaming environments need to load and unload both static and dynamic objects.
+Physics engines for games usually have a \emph{broad-phase} to accelerate ray casts, shape casts, and overlap tests. Typically there are many independently moving objects along with a static environment that need to be considered. Furthermore, steaming environments need to load and unload both static and dynamic objects without pausing the game for a load screen.
 
 For simple games, a brute force approach with an array of axis-aligned bounding boxes (AABBs) can suffice. Once there are more than 20 or so objects, a better acceleration structure can improve performance. 
 
