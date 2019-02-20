@@ -5,5 +5,7 @@ svg-inkscape/
 *.log
 *.blg
 *.ini
+*.pdf
+*.out
 build/
 
