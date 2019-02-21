@@ -82,7 +82,7 @@ struct Test3 : Test
 		m_tree.m_heuristic = heuristic;
 		m_rotate = rotate;
 
-		bool success = Load("data/BlizzardLandTree.txt");
+		bool success = Load("data/BlizzardLandEditorTree.txt");
 		assert(success);
 
 		m_proxyCount = m_vertexCount / 2;
@@ -130,7 +130,7 @@ struct Test3 : Test
 
 		float updateTime = timer.GetMilliseconds();
 
-		draw.DrawString(5, 50, "build time = %6.2f, update time = %5.2f", m_buildTime, updateTime);
+		draw.DrawString(5, 50, "build time = %6.2f, update time = %8.2f us", m_buildTime, 1000.0f * updateTime);
 
 		int height = m_tree.GetHeight();
 		float area = m_tree.GetAreaRatio();
