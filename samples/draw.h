@@ -111,7 +111,7 @@ struct Draw
 
 	void DrawAxes();
 
-    void DrawString(int x, int y, const char* sz, ...);
+    void DrawString(float x, float y, const char* sz, ...);
 
     void DrawString(dtVec p, const Color& color, const char* sz, ...);
 
@@ -120,5 +120,6 @@ struct Draw
 	Camera m_camera;
     struct GLDynamicPoints* m_points;
     struct GLDynamicLines* m_lines;
+	float m_uiScale;
 	bool m_showUI;
 };

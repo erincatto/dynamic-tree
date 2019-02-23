@@ -618,6 +618,7 @@ Draw::Draw()
     m_points = nullptr;
     m_lines = nullptr;
 	m_showUI = true;
+	m_uiScale = 1.0f;
 }
 
 //
@@ -706,7 +707,7 @@ void Draw::DrawAxes()
 }
 
 //
-void Draw::DrawString(int x, int y, const char* sz, ...)
+void Draw::DrawString(float x, float y, const char* sz, ...)
 {
 	if (m_showUI == false)
 	{
@@ -716,7 +717,7 @@ void Draw::DrawString(int x, int y, const char* sz, ...)
     va_list arg;
     va_start(arg, sz);
 	ImGui::Begin("Overlay", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-	ImGui::SetCursorPos(ImVec2(float(x), float(y)));
+	ImGui::SetCursorPos(ImVec2(x * m_uiScale, y * m_uiScale));
     ImGui::TextColoredV(ImColor(230, 153, 153, 255), sz, arg);
     ImGui::End();
     va_end(arg);

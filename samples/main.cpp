@@ -74,6 +74,8 @@ namespace
 
 	int g_reinsertIter = 0;
 	int g_shuffleIter = 0;
+
+	float g_uiScale = 1.0f;
 }
 
 static void glfwErrorCallback(int error, const char* description)
@@ -233,9 +235,9 @@ static void DrawUI()
 		return;
 	}
 
-	float menuWidth = 200.0f;
-	ImGui::SetNextWindowPos(ImVec2(g_camera.m_ws - menuWidth - 10.0f, 10.0f));
-	ImGui::SetNextWindowSize(ImVec2(menuWidth, g_camera.m_hs - 20.0f));
+	float menuWidth = 150.0f;
+	ImGui::SetNextWindowPos(ImVec2(g_camera.m_ws - (menuWidth + 10.0f) * g_uiScale, 10.0f * g_uiScale));
+	ImGui::SetNextWindowSize(ImVec2(menuWidth * g_uiScale, g_camera.m_hs - 20.0f * g_uiScale));
 	ImGui::Begin("##Controls", &g_draw.m_showUI, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 
 	ImGuiTabBarFlags tab_bar_flags = ImGuiTabBarFlags_None;
@@ -249,8 +251,8 @@ static void DrawUI()
 				InitTest(g_settings.m_testIndex);
 			}
 
-			ImGui::SliderInt("Reinsert Iter", &g_reinsertIter, 0, 100);
-			ImGui::SliderInt("Shuffle Iter", &g_shuffleIter, 0, 100);
+			ImGui::SliderInt("##Reinsert", &g_reinsertIter, 0, 100, "reinsert %d");
+			ImGui::SliderInt("##Shuffle", &g_shuffleIter, 0, 100, "shuffle %d");
 
 			static int heuristic = int(g_heuristic);
 			ImGui::RadioButton("SAH", &heuristic, int(dt_surfaceAreaHeuristic));
@@ -394,7 +396,8 @@ int main(int, char**)
 
 	float xscale, yscale;
 	glfwGetWindowContentScale(g_window, &xscale, &yscale);
-	float uiScale = xscale;
+	g_uiScale = xscale;
+	g_draw.m_uiScale = g_uiScale;
 
 	bool success;
 	IMGUI_CHECKVERSION();
@@ -415,8 +418,9 @@ int main(int, char**)
 		assert(false);
 	}
 
+	const char* fontPath = "data/DroidSans.ttf";
 	ImGuiIO& io = ImGui::GetIO();
-	io.FontGlobalScale = uiScale;
+	io.Fonts->AddFontFromFileTTF(fontPath, 13.f * g_uiScale);
 
 	g_draw.Create();
 
@@ -474,19 +478,19 @@ int main(int, char**)
 		// Globally position text
 		if (g_draw.m_showUI)
 		{
-			ImGui::SetNextWindowPos(ImVec2(10.0f, 10.0f));
+			ImGui::SetNextWindowPos(ImVec2(10.0f * g_uiScale, 10.0f * g_uiScale));
 			ImGui::Begin("Overlay", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
 			ImGui::End();
 
-			g_draw.DrawString(5, 5, "%s", g_test->GetName());
+			g_draw.DrawString(5.0f, 5.0f, "%s", g_test->GetName());
 
 			char buffer[64];
 			sprintf(buffer, "proxies %d, height %d, area %g", g_proxyCount, g_treeHeight, g_treeArea);
-			g_draw.DrawString(5, 20, buffer);
+			g_draw.DrawString(5.0f, 20.0f, buffer);
 
 			const dtTree& tree = g_test->m_tree;
 			sprintf(buffer, "BF %d, BF %d, CD %d, CE %d", tree.m_countBF, tree.m_countBG, tree.m_countCD, tree.m_countCE);
-			g_draw.DrawString(5, 35, buffer);
+			g_draw.DrawString(5.0f, 35.0f, buffer);
 		}
 
 		Color color(0.3f, 0.3f, 0.8f);
