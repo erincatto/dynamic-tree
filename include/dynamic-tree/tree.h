@@ -104,7 +104,8 @@ struct dtTree
 	void FreeNode(int node);
 
 	void InsertLeaf(int node, bool rotate);
-	void InsertLeafSAH(int node, bool rotate);
+	void InsertLeafSAH1(int node, bool rotate);
+	void InsertLeafSAH2(int node, bool rotate);
 	void InsertLeafManhattan(int node, bool rotate);
 	void RemoveLeaf(int node, bool rotate);
 
@@ -141,4 +142,5 @@ struct dtTree
 	dtTreeHeuristic m_heuristic;
 	
 	std::vector<dtCandidateNode> m_heap;
+	int m_maxHeapCount;
 };

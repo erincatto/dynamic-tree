@@ -66,6 +66,7 @@ namespace
 
 	int g_proxyCount = 0;
 	int g_treeHeight = 0;
+	int g_heapCount = 0;
 	float g_treeArea = 0.0f;
 
 	dtTreeHeuristic g_heuristic = dt_surfaceAreaHeuristic;
@@ -109,6 +110,7 @@ static void InitTest(int index)
 
 	g_proxyCount = g_test->m_tree.GetProxyCount();
 	g_treeHeight = g_test->m_tree.GetHeight();
+	g_heapCount = g_test->m_tree.m_maxHeapCount;
 	g_treeArea = g_test->m_tree.GetAreaRatio();
 }
 
@@ -269,6 +271,13 @@ static void DrawUI()
 			if (ImGui::Button("Write Dot"))
 			{
 				g_test->m_tree.WriteDot("dot.txt");
+			}
+
+			if (ImGui::Button("Bottom Up"))
+			{
+				g_test->m_tree.RebuildBottomUp();
+				g_treeHeight = g_test->m_tree.GetHeight();
+				g_treeArea = g_test->m_tree.GetAreaRatio();
 			}
 
 			ImGui::Separator();
@@ -471,6 +480,8 @@ int main(int, char**)
 
 		UpdateCamera();
 
+		//InitTest(g_settings.m_testIndex);
+
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
@@ -485,7 +496,7 @@ int main(int, char**)
 			g_draw.DrawString(5.0f, 5.0f, "%s", g_test->GetName());
 
 			char buffer[64];
-			sprintf(buffer, "proxies %d, height %d, area %g", g_proxyCount, g_treeHeight, g_treeArea);
+			sprintf(buffer, "proxies %d, height %d, heap %d, area %g", g_proxyCount, g_treeHeight, g_heapCount, g_treeArea);
 			g_draw.DrawString(5.0f, 20.0f, buffer);
 
 			const dtTree& tree = g_test->m_tree;

@@ -47,6 +47,7 @@ dtTree::dtTree()
 	m_path = 0;
 	m_insertionCount = 0;
 	m_heap.reserve(128);
+	m_maxHeapCount = 0;
 }
 
 dtTree::~dtTree()
@@ -170,7 +171,7 @@ static inline bool operator < (const dtCandidateNode& a, const dtCandidateNode& 
 }
 
 // Insert using branch and bound
-void dtTree::InsertLeafSAH(int leaf, bool rotate)
+void dtTree::InsertLeafSAH1(int leaf, bool rotate)
 {
 	++m_insertionCount;
 
@@ -243,6 +244,8 @@ void dtTree::InsertLeafSAH(int leaf, bool rotate)
 		}
 	}
 
+	m_maxHeapCount = dtMax(m_maxHeapCount, int(m_heap.size()));
+
 #if 0
 	// Compare with brute force
 	// Passed on BlizzardLand
@@ -273,6 +276,201 @@ void dtTree::InsertLeafSAH(int leaf, bool rotate)
 		if (cost < bestCost2)
 		{
 			bestCost2 = cost; 
+			bestSibling2 = i;
+		}
+	}
+
+	if (dtAbs(bestCost2 - bestCost) > 0.0001f + 0.0001f * dtAbs(bestCost))
+	{
+		bestCost2 += 0.0f;
+	}
+#endif
+
+	int sibling = bestSibling;
+
+	// Stage 2: create a new parent
+	int oldParent = m_nodes[sibling].parent;
+	int newParent = AllocateNode();
+	m_nodes[newParent].parent = oldParent;
+	m_nodes[newParent].aabb = dtUnion(aabbQ, m_nodes[sibling].aabb);
+	m_nodes[newParent].height = m_nodes[sibling].height + 1;
+
+	if (oldParent != dt_nullNode)
+	{
+		// The sibling was not the root.
+		if (m_nodes[oldParent].child1 == sibling)
+		{
+			m_nodes[oldParent].child1 = newParent;
+		}
+		else
+		{
+			m_nodes[oldParent].child2 = newParent;
+		}
+
+		m_nodes[newParent].child1 = sibling;
+		m_nodes[newParent].child2 = leaf;
+		m_nodes[sibling].parent = newParent;
+		m_nodes[leaf].parent = newParent;
+	}
+	else
+	{
+		// The sibling was the root.
+		m_nodes[newParent].child1 = sibling;
+		m_nodes[newParent].child2 = leaf;
+		m_nodes[sibling].parent = newParent;
+		m_nodes[leaf].parent = newParent;
+		m_root = newParent;
+	}
+
+	// Stage 3: walk back up the tree fixing heights and AABBs
+	int index = m_nodes[leaf].parent;
+	while (index != dt_nullNode)
+	{
+		int child1 = m_nodes[index].child1;
+		int child2 = m_nodes[index].child2;
+
+		assert(child1 != dt_nullNode);
+		assert(child2 != dt_nullNode);
+
+		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
+		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
+
+		if (rotate)
+		{
+			Rotate(index);
+		}
+
+		index = m_nodes[index].parent;
+	}
+
+	Validate();
+}
+
+// Insert using branch and bound
+void dtTree::InsertLeafSAH2(int leaf, bool rotate)
+{
+	++m_insertionCount;
+
+	if (m_root == dt_nullNode)
+	{
+		m_root = leaf;
+		m_nodes[m_root].parent = dt_nullNode;
+		return;
+	}
+
+	dtAABB aabbQ = m_nodes[leaf].aabb;
+	float areaQ = dtArea(aabbQ);
+
+	// Stage 1: find the best sibling for this node
+	dtCandidateNode candidate;
+	candidate.index = m_root;
+	
+	int bestSibling = m_root;
+	float bestCost;
+	{
+		const dtNode& node = m_nodes[m_root];
+		bestCost = dtArea(dtUnion(node.aabb, aabbQ));
+		candidate.inducedCost = bestCost - dtArea(node.aabb);
+	}
+
+	m_heap.clear();
+	m_heap.push_back(candidate);
+
+	while (m_heap.size() > 0)
+	{
+		std::pop_heap(m_heap.begin(), m_heap.end());
+		candidate = m_heap.back();
+		m_heap.pop_back();
+
+		int index = candidate.index;
+		float lowerBoundCost = candidate.inducedCost + areaQ;
+		if (lowerBoundCost >= bestCost)
+		{
+			// Optimum found
+			break;
+		}
+
+		const dtNode& node = m_nodes[index];
+		if (node.isLeaf)
+		{
+			continue;
+		}
+
+		{
+			const dtNode& child1 = m_nodes[node.child1];
+			float directCost = dtArea(dtUnion(child1.aabb, aabbQ));
+			float totalCost = directCost + candidate.inducedCost;
+			if (totalCost <= bestCost)
+			{
+				bestCost = totalCost;
+				bestSibling = node.child1;
+			}
+
+			float inducedCost = totalCost - dtArea(child1.aabb);
+			if (inducedCost + areaQ < bestCost)
+			{
+				dtCandidateNode candidate1;
+				candidate1.index = node.child1;
+				candidate1.inducedCost = totalCost - dtArea(child1.aabb);
+				m_heap.push_back(candidate1);
+				std::push_heap(m_heap.begin(), m_heap.end());
+			}
+		}
+
+		{
+			const dtNode& child2 = m_nodes[node.child2];
+			float directCost = dtArea(dtUnion(child2.aabb, aabbQ));
+			float totalCost = directCost + candidate.inducedCost;
+			if (totalCost <= bestCost)
+			{
+				bestCost = totalCost;
+				bestSibling = node.child2;
+			}
+
+			float inducedCost = totalCost - dtArea(child2.aabb);
+			if (inducedCost + areaQ < bestCost)
+			{
+				dtCandidateNode candidate2;
+				candidate2.index = node.child2;
+				candidate2.inducedCost = totalCost - dtArea(child2.aabb);
+				m_heap.push_back(candidate2);
+				std::push_heap(m_heap.begin(), m_heap.end());
+			}
+		}
+	}
+
+	m_maxHeapCount = dtMax(m_maxHeapCount, int(m_heap.size()));
+
+#if 0
+	// Compare with brute force
+	// Passed on BlizzardLand
+	float bestCost2 = FLT_MAX;
+	int bestSibling2 = dt_nullNode;
+	for (int i = 0; i < m_nodeCount; ++i)
+	{
+		if (i == leaf)
+		{
+			continue;
+		}
+
+		const dtNode& node = m_nodes[i];
+		if (node.height == dt_nullNode)
+		{
+			continue;
+		}
+
+		float cost = dtArea(dtUnion(aabbQ, node.aabb));
+		int parentIndex = node.parent;
+		while (parentIndex != dt_nullNode)
+		{
+			const dtNode& parent = m_nodes[parentIndex];
+			cost += dtArea(dtUnion(aabbQ, parent.aabb)) - dtArea(parent.aabb);
+			parentIndex = parent.parent;
+		}
+
+		if (cost < bestCost2)
+		{
+			bestCost2 = cost;
 			bestSibling2 = i;
 		}
 	}
@@ -450,7 +648,7 @@ void dtTree::InsertLeaf(int node, bool rotate)
 {
 	if (m_heuristic == dt_surfaceAreaHeuristic)
 	{
-		InsertLeafSAH(node, rotate);
+		InsertLeafSAH2(node, rotate);
 	}
 	else
 	{
@@ -1094,7 +1292,7 @@ void dtTree::RebuildBottomUp()
 	{
 		if (m_nodes[i].height < 0)
 		{
-			// free node in pool
+			// node unused
 			continue;
 		}
 
