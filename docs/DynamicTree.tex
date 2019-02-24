@@ -64,6 +64,12 @@ The AABB tree is specific type of bounding volume hierarchy (BVH). The AABB is t
 
 The AABB tree supports several queries efficiently: ray-casts, sphere-casts, general shape-casts, and AABB overlap queries. AABB trees can also support efficient closest point queries using a branch and bound algorithm.
 
+This article covers the incremental construction of AABB trees suitable for games. Games need to handle dynamic updates to the tree as objects move. Objects in games are often created and destroyed in real-time. When a game is loading it is beneficial to build the AABB tree incrementally to spread out the cost across several frames. Finally, games often have streaming worlds where objects are loaded and unloaded as the player traverses the world.
+
+The \emph{Surface Area Heuristic} and \emph{branch and bound} are used to build the tree incrementally. This leads to high quality trees in many cases. Object movement is handled be removing and re-inserting leaf nodes from the tree. Temporal coherence is used to avoid tree leaf re-insertion by using enlarged AABBs in the tree.
+
+Sorted input is a common problem in games where procedural general will place many similar objects sequentially. Such scenarios can lead to degenerate AABB trees that take the form of linked lists. This has the impact of making queries take $O(N)$ time instead of the typical $O(log N)$ time associated with binary trees. Using tree rotations during the insertion process is shown to mitigate this effect.
+
 \section{Related Work}
 Much of the recent research on bounding volume hierarchies comes from the ray tracing community. While ray casting performance is clearly critical in ray tracing, it is also important in games. Especially games with a client-server architecture like Overwatch, where the server performs all gameplay logic and must therefore perform many ray casts. The cost of these ray casts directly influences the server scalability and the cost of hosting the game.
 
@@ -78,6 +84,8 @@ Soon authors began to use tree re-configuration operations to improve the BVH. O
 Bittner et al~\cite{Bittner2015} and Presson~\cite{Presson2008} developed incremental construction algorithms. Bittner used the SAH and branch and bound, while Presson used the Manhattan norm between AABB centers.
 
 \section{Incremental Tree Construction}
+
+\section{Object Movement}
 
 \section{Sorted Input}
 

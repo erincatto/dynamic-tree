@@ -170,7 +170,7 @@ static inline bool operator < (const dtCandidateNode& a, const dtCandidateNode& 
 	return a.inducedCost > b.inducedCost;
 }
 
-// Insert using branch and bound
+// Insert using branch and bound. Push children without consideration.
 void dtTree::InsertLeafSAH1(int leaf, bool rotate)
 {
 	++m_insertionCount;
@@ -346,7 +346,7 @@ void dtTree::InsertLeafSAH1(int leaf, bool rotate)
 	Validate();
 }
 
-// Insert using branch and bound
+// Insert using branch and bound. Consider children before pushing.
 void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 {
 	++m_insertionCount;
@@ -395,6 +395,8 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 		{
 			continue;
 		}
+
+		// Child push order doesn't matter since the heap will sort them.
 
 		{
 			const dtNode& child1 = m_nodes[node.child1];
