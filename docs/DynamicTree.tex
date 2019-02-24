@@ -41,7 +41,8 @@ frame=single,
 \begin{figure}
 	\begin{center}
 	\end{center}
-	\caption{Teaser Figure}
+	\includesvg[width=0.6\textwidth]{images/Rotate}
+	\caption{A tree rotation that can be used to mitigate a degenerate BVH.}
 	\label{fig:teaser}
 \end{figure}
 
@@ -64,7 +65,17 @@ The AABB tree is specific type of bounding volume hierarchy (BVH). The AABB is t
 The AABB tree supports several queries efficiently: ray-casts, sphere-casts, general shape-casts, and AABB overlap queries. AABB trees can also support efficient closest point queries using a branch and bound algorithm.
 
 \section{Related Work}
-Much of the recent research on bounding volume hierarchies comes from the ray tracing community.
+Much of the recent research on bounding volume hierarchies comes from the ray tracing community. While ray casting performance is clearly critical in ray tracing, it is also important in games. Especially games with a client-server architecture like Overwatch, where the server performs all gameplay logic and must therefore perform many ray casts. The cost of these ray casts directly influences the server scalability and the cost of hosting the game.
+
+Often bounding volume hierarchies are compared with kd-trees. Generally kd-trees are faster, but take longer to build and use more memory~\cite{Vinkler2014}. On the other hand, BVHs can more readily handle dynamic scenes be they are object rather than spatially based.
+
+Early work on bounding volume hierarchies focused on moving from manual to automatic construction. Goldsmith and Salmon~\cite{Goldsmith1987} developed the notion of the \emph{Surface Area Heuristic} and used it to build bounding volume hierarchies. Omuhundrol~\cite{Omohundrol1989} (TODO ERIN).
+
+Later authors began to consider handling dynamic hierarchies. Bergen~\cite{Bergen1998} built AABB trees using a top down build with mid-point splits and handled movement using refitting. Larson and Möller~\cite{Larsson2006} also used a top down mid-point split build with refitting, but added lazy sub-tree rebuilding.
+
+Soon authors began to use tree re-configuration operations to improve the BVH. Otaduy et al~\cite{Otaduy2007} used a top down build with mid-point splits. They introduced AVL style tree rotation operations to keep the tree balanced. They also used a grand-children shuffling operation to optimize a squared volume heuristic. Kensler~\cite{Kensler2008} used hill climbing and simulated annealing to apply tree rotations to optimize the surface area heuristic. Kopta and Kensler~\cite{Kopta2012} applied refitting and rotations accross the whole tree after each frame of animation. Bittner et al~\cite{Bittner2013} used node removal and re-insertion to optimize existing trees using the SAH.
+
+Bittner et al~\cite{Bittner2015} and Presson~\cite{Presson2008} developed incremental construction algorithms. Bittner used the SAH and branch and bound, while Presson used the Manhattan norm between AABB centers.
 
 \section{AABB Trees}
 Figure~\ref{fig:loose} shows several geometric objects that may exist in a game world. Gameplay code may wish to query this world to make decisions. Queries are usually ray casts and overlap tests. For example in a shooting game a ray cast can represent the projectile. Area effects may use an overlap test to determine what objects are present in a region of space, typically an AABB or spherical region.

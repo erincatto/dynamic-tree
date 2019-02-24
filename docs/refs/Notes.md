@@ -6,6 +6,7 @@ Considered insertion order. Found orderd insertion is bad (e.g. tile-based world
 Funny: written before the term AABB existed.
 
 # S. Omohundro (1989) - Five Balltree Construction Algorithms
+Considers top down, bottom up, and incremental tree building algorithms. Minimizing volume.
 
 # G. van den Bergen (1998) - Efficient Collision Detection of Complex Deformable Models using AABB Trees
 
@@ -38,4 +39,4 @@ Incremental optimization by node removal and re-insertion in batches. Removals r
 
 # Nathanael Presson, btDbvt
 
-Incremental BVH builder. Uses dist_x + dist_y + dist_z of centers for child selection (Proximity). Tiles example creates tree of height 209. Takes 49300 iterations to get to height of 14 using round-robbin remove-insert.
+Incremental BVH builder. Uses Manhattan distance of centers for insertion traversal. Only considers leaves as siblings. Tiles example creates tree of height 209. Takes 49300 iterations to get to height of 14 using round-robbin remove-insert.
