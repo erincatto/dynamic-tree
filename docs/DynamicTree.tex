@@ -85,6 +85,37 @@ Bittner et al~\cite{Bittner2015} and Presson~\cite{Presson2008} developed increm
 
 \section{Incremental Tree Construction}
 
+Consider the binary tree of Figure~\ref{fig:example_tree}. Adding a new leaf node $L$ to the tree is broken up into 3 stages:
+\begin{enumerate}
+	\item[Stage 1] Identify a sibling $S$ for $L$. This can be an existing internal node or leaf node.
+	\item[Stage 2] Disconnect $S$ from the tree and create a new internal node $P$ in place of $S$. Make $S$ and $L$ children of $P$.
+	\item[Stage 3] Refit the AABBs of the ancestors of $P$.
+\end{enumerate}
+
+\begin{figure}
+	\begin{center}
+		\includesvg[pretex=\large, width=\textwidth]{images/ExampleBinaryTree}
+	\end{center}
+	\caption{Example binary tree}
+	\label{fig:example_tree}
+\end{figure}
+
+Figure~\ref{fig:insert_leaf} shows $L$ inserted with $H$ as the sibling. Node $11$ is the new internal node. The surface area increase to the tree is the surface area the new node plus the increased area of the ancestors of $L$:
+\begin{equation}
+	C_H = SA(11) + \Delta SA(10) + \Delta SA(8) + \Delta SA(7) + \Delta SA(3) + \Delta SA(1)
+\end{equation}
+In general the cost of any sibling $S$ choice is the area of the new internal node $P$ plus the increased area of the ancestors. The area of the $P$ is called the \emph{direct cost} and the increased area of the ancestors is the \emph{inherited cost}.
+\[ C_S = SA(P) + \sum_{T \in ancestors(P)} \Delta SA(T) \]
+Note that the area of $L$ is not included the cost function because only the relative cost matters when considering potential siblings for $L$.
+
+\begin{figure}
+	\begin{center}
+		\includesvg[pretex=\large, width=\textwidth]{images/TreeInsert2}
+	\end{center}
+	\caption{Inserting new leaf $L$ into tree with new parent node $11$}
+	\label{fig:insert_leaf}
+\end{figure}
+
 \section{Object Movement}
 
 \section{Sorted Input}
@@ -188,13 +219,7 @@ Figure~\ref{fig:overlay} shows an AABB tree overlayed onto the game world. The c
 	\label{fig:overlay}
 \end{figure}
 
-\begin{figure}
-	\begin{center}
-		\includesvg[pretex=\large, width=\textwidth]{images/ExampleBinaryTree}
-	\end{center}
-	\caption{Example binary tree}
-	\label{fig:example_tree}
-\end{figure}
+
 
 The structural requirements for an AABB are as follows:
 \begin{itemize}
@@ -314,13 +339,7 @@ Figures~\ref{fig:tree_insert1}, \ref{fig:tree_insert2}, and \ref{fig:tree_insert
 	\label{fig:tree_insert1}
 \end{figure}
 
-\begin{figure}
-	\begin{center}
-		\includesvg[pretex=\large, width=\textwidth]{images/TreeInsert2}
-	\end{center}
-	\caption{Connecting new leaf $Q$ into tree with new parent node $11$}
-	\label{fig:tree_insert2}
-\end{figure}
+
 
 
 \begin{figure}

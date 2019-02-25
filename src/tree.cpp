@@ -182,8 +182,8 @@ void dtTree::InsertLeafSAH1(int leaf, bool rotate)
 		return;
 	}
 
-	dtAABB aabbQ = m_nodes[leaf].aabb;
-	float areaQ = dtArea(aabbQ);
+	dtAABB aabbL = m_nodes[leaf].aabb;
+	float areaL = dtArea(aabbL);
 
 	// Stage 1: find the best sibling for this node
 	dtCandidateNode candidate;
@@ -203,14 +203,14 @@ void dtTree::InsertLeafSAH1(int leaf, bool rotate)
 
 		int index = candidate.index;
 		float inducedCost = candidate.inducedCost;
-		if (inducedCost + areaQ >= bestCost)
+		if (inducedCost + areaL >= bestCost)
 		{
 			// Optimum found
 			break;
 		}
 
 		const dtNode& node = m_nodes[index];
-		float directCost = dtArea(dtUnion(node.aabb, aabbQ));
+		float directCost = dtArea(dtUnion(node.aabb, aabbL));
 		float totalCost = inducedCost + directCost;
 
 		if (totalCost <= bestCost)
@@ -225,7 +225,7 @@ void dtTree::InsertLeafSAH1(int leaf, bool rotate)
 		}
 
 		inducedCost += directCost - dtArea(node.aabb);
-		float lowerBoundCost = inducedCost + areaQ;
+		float lowerBoundCost = inducedCost + areaL;
 		if (lowerBoundCost <= bestCost)
 		{
 			dtCandidateNode candidate1;
@@ -264,12 +264,12 @@ void dtTree::InsertLeafSAH1(int leaf, bool rotate)
 			continue;
 		}
 
-		float cost = dtArea(dtUnion(aabbQ, node.aabb));
+		float cost = dtArea(dtUnion(aabbL, node.aabb));
 		int parentIndex = node.parent;
 		while (parentIndex != dt_nullNode)
 		{
 			const dtNode& parent = m_nodes[parentIndex];
-			cost += dtArea(dtUnion(aabbQ, parent.aabb)) - dtArea(parent.aabb);
+			cost += dtArea(dtUnion(aabbL, parent.aabb)) - dtArea(parent.aabb);
 			parentIndex = parent.parent;
 		}
 
@@ -292,7 +292,7 @@ void dtTree::InsertLeafSAH1(int leaf, bool rotate)
 	int oldParent = m_nodes[sibling].parent;
 	int newParent = AllocateNode();
 	m_nodes[newParent].parent = oldParent;
-	m_nodes[newParent].aabb = dtUnion(aabbQ, m_nodes[sibling].aabb);
+	m_nodes[newParent].aabb = dtUnion(aabbL, m_nodes[sibling].aabb);
 	m_nodes[newParent].height = m_nodes[sibling].height + 1;
 
 	if (oldParent != dt_nullNode)
@@ -358,8 +358,8 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 		return;
 	}
 
-	dtAABB aabbQ = m_nodes[leaf].aabb;
-	float areaQ = dtArea(aabbQ);
+	dtAABB aabbL = m_nodes[leaf].aabb;
+	float areaL = dtArea(aabbL);
 
 	// Stage 1: find the best sibling for this node
 	dtCandidateNode candidate;
@@ -369,7 +369,7 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 	float bestCost;
 	{
 		const dtNode& node = m_nodes[m_root];
-		bestCost = dtArea(dtUnion(node.aabb, aabbQ));
+		bestCost = dtArea(dtUnion(node.aabb, aabbL));
 		candidate.inducedCost = bestCost - dtArea(node.aabb);
 	}
 
@@ -383,7 +383,7 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 		m_heap.pop_back();
 
 		int index = candidate.index;
-		float lowerBoundCost = candidate.inducedCost + areaQ;
+		float lowerBoundCost = candidate.inducedCost + areaL;
 		if (lowerBoundCost >= bestCost)
 		{
 			// Optimum found
@@ -400,7 +400,7 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 
 		{
 			const dtNode& child1 = m_nodes[node.child1];
-			float directCost = dtArea(dtUnion(child1.aabb, aabbQ));
+			float directCost = dtArea(dtUnion(child1.aabb, aabbL));
 			float totalCost = directCost + candidate.inducedCost;
 			if (totalCost <= bestCost)
 			{
@@ -409,7 +409,7 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 			}
 
 			float inducedCost = totalCost - dtArea(child1.aabb);
-			if (inducedCost + areaQ < bestCost)
+			if (inducedCost + areaL < bestCost)
 			{
 				dtCandidateNode candidate1;
 				candidate1.index = node.child1;
@@ -421,7 +421,7 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 
 		{
 			const dtNode& child2 = m_nodes[node.child2];
-			float directCost = dtArea(dtUnion(child2.aabb, aabbQ));
+			float directCost = dtArea(dtUnion(child2.aabb, aabbL));
 			float totalCost = directCost + candidate.inducedCost;
 			if (totalCost <= bestCost)
 			{
@@ -430,7 +430,7 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 			}
 
 			float inducedCost = totalCost - dtArea(child2.aabb);
-			if (inducedCost + areaQ < bestCost)
+			if (inducedCost + areaL < bestCost)
 			{
 				dtCandidateNode candidate2;
 				candidate2.index = node.child2;
@@ -461,12 +461,12 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 			continue;
 		}
 
-		float cost = dtArea(dtUnion(aabbQ, node.aabb));
+		float cost = dtArea(dtUnion(aabbL, node.aabb));
 		int parentIndex = node.parent;
 		while (parentIndex != dt_nullNode)
 		{
 			const dtNode& parent = m_nodes[parentIndex];
-			cost += dtArea(dtUnion(aabbQ, parent.aabb)) - dtArea(parent.aabb);
+			cost += dtArea(dtUnion(aabbL, parent.aabb)) - dtArea(parent.aabb);
 			parentIndex = parent.parent;
 		}
 
@@ -489,7 +489,7 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 	int oldParent = m_nodes[sibling].parent;
 	int newParent = AllocateNode();
 	m_nodes[newParent].parent = oldParent;
-	m_nodes[newParent].aabb = dtUnion(aabbQ, m_nodes[sibling].aabb);
+	m_nodes[newParent].aabb = dtUnion(aabbL, m_nodes[sibling].aabb);
 	m_nodes[newParent].height = m_nodes[sibling].height + 1;
 
 	if (oldParent != dt_nullNode)
@@ -562,7 +562,7 @@ void dtTree::InsertLeafManhattan(int leaf, bool rotate)
 		return;
 	}
 
-	dtAABB aabbQ = m_nodes[leaf].aabb;
+	dtAABB aabbL = m_nodes[leaf].aabb;
 
 	// Stage 1: find the best sibling for this node
 	int index = m_root;
@@ -572,8 +572,8 @@ void dtTree::InsertLeafManhattan(int leaf, bool rotate)
 		int child2 = m_nodes[index].child2;
 
 		// Manhattan distance heuristic from Presson
-		float C1 = dtManhattan(aabbQ, m_nodes[child1].aabb);
-		float C2 = dtManhattan(aabbQ, m_nodes[child2].aabb);
+		float C1 = dtManhattan(aabbL, m_nodes[child1].aabb);
+		float C2 = dtManhattan(aabbL, m_nodes[child2].aabb);
 
 		// Descend
 		if (C1 < C2)
@@ -592,7 +592,7 @@ void dtTree::InsertLeafManhattan(int leaf, bool rotate)
 	int oldParent = m_nodes[sibling].parent;
 	int newParent = AllocateNode();
 	m_nodes[newParent].parent = oldParent;
-	m_nodes[newParent].aabb = dtUnion(aabbQ, m_nodes[sibling].aabb);
+	m_nodes[newParent].aabb = dtUnion(aabbL, m_nodes[sibling].aabb);
 	m_nodes[newParent].height = m_nodes[sibling].height + 1;
 
 	if (oldParent != dt_nullNode)

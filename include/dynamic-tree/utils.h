@@ -272,6 +272,20 @@ inline float dtArea(const dtAABB& a)
 	return 2.0f * (w.x * w.y + w.y * w.z + w.z * w.x);
 }
 
+inline bool dtContains(const dtAABB& a, const dtAABB& b)
+{
+	dtVec upper = a.upperBound - b.upperBound;
+	dtVec lower = b.lowerBound - a.lowerBound;
+
+	if (upper.x < 0.0f || upper.y < 0.0f || upper.z < 0.0f
+		|| lower.x < 0.0f || lower.y < 0.0f || lower.z < 0.0f)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 class dtTimer
 {
 public:
