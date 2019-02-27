@@ -65,6 +65,7 @@ namespace
 	Test* g_test = nullptr;
 
 	int g_proxyCount = 0;
+	int g_nodeCount = 0;
 	int g_treeHeight = 0;
 	int g_heapCount = 0;
 	float g_treeArea = 0.0f;
@@ -109,6 +110,7 @@ static void InitTest(int index)
 	g_test->Create(g_heuristic, g_rotate);
 
 	g_proxyCount = g_test->m_tree.GetProxyCount();
+	g_nodeCount = g_test->m_tree.m_nodeCount;
 	g_treeHeight = g_test->m_tree.GetHeight();
 	g_heapCount = g_test->m_tree.m_maxHeapCount;
 	g_treeArea = g_test->m_tree.GetAreaRatio();
@@ -496,7 +498,7 @@ int main(int, char**)
 			g_draw.DrawString(5.0f, 5.0f, "%s", g_test->GetName());
 
 			char buffer[64];
-			sprintf(buffer, "proxies %d, height %d, heap %d, area %g", g_proxyCount, g_treeHeight, g_heapCount, g_treeArea);
+			sprintf(buffer, "proxies %d, nodes %d, height %d, heap %d, area %.2f", g_proxyCount, g_nodeCount, g_treeHeight, g_heapCount, g_treeArea);
 			g_draw.DrawString(5.0f, 20.0f, buffer);
 
 			const dtTree& tree = g_test->m_tree;
