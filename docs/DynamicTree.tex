@@ -85,6 +85,8 @@ Bittner et al~\cite{Bittner2015} and Presson~\cite{Presson2008} developed increm
 
 \section{Incremental Tree Construction}
 
+Dynamic trees need to support the efficient insertion and removal of leaf nodes. The key operation is insertion. Games need to build large trees quickly that provide fast queries.
+
 Consider the binary tree of Figure~\ref{fig:example_tree}. Adding a new leaf node $L$ to the tree is broken up into 3 stages:
 \begin{enumerate}
 	\item[Stage 1] Identify a sibling $S$ for $L$. This can be an existing internal node or leaf node.
@@ -99,6 +101,8 @@ Consider the binary tree of Figure~\ref{fig:example_tree}. Adding a new leaf nod
 	\caption{Example binary tree}
 	\label{fig:example_tree}
 \end{figure}
+
+The Surface Area Heuristic is used to guide Stage 1. All nodes can be a sibling. The sibling is chosen that yields the small surface area increase. The increased surface area for a given sibling is due the creation of a new internal node and the increase surface area of the ancestors.
 
 Figure~\ref{fig:insert_leaf} shows $L$ inserted with $H$ as the sibling. Node $11$ is the new internal node. The surface area increase to the tree is the surface area the new node plus the increased area of the ancestors of $L$:
 \begin{equation}
@@ -115,6 +119,10 @@ Note that the area of $L$ is not included the cost function because only the rel
 	\caption{Inserting new leaf $L$ into tree with new parent node $11$}
 	\label{fig:insert_leaf}
 \end{figure}
+
+For a binary tree with $N$ leaf nodes, there are $2N - 1$ possible siblings. Finding the best sibling by visiting every node and computing the increased surface area is quite expensive, especially during the initial construction of the tree.
+
+The \emph{branch and bound} algorithm can be used to accelerate the search for the best sibling. Brand and bound is a recursive algorithm like depth-first search or bread-first search. Instead of using a stack or a queue, branch and bound uses a priority queue, which can be implemented as a min-heap.
 
 \section{Object Movement}
 
