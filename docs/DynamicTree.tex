@@ -9,6 +9,8 @@
 \usepackage{amsfonts}
 \usepackage{draftwatermark}
 \usepackage{hyperref}
+\usepackage{algorithm}
+\usepackage{algorithmic}
 \SetWatermarkText{DRAFT}
 \SetWatermarkScale{1}
 \SetWatermarkLightness{0.95}
@@ -137,17 +139,27 @@ In this case the direct cost is just the surface area of $L$. This represents th
 The branch and bound algorithm starts by computing the cost of root node:
 \[ C_{root} = SA(root \cup L) \]
 This is set as the best cost, \[C_{best} = C_{root} \] and as the best sibling, \[S_{best} = root\]. The root node is pushed onto the priority queue along with the inherited cost of the root node, which is $0$.
-\begin{lstlisting}[caption={Branch and bound sibling search}, label={lst:branch_and_bound}, float]
-int BestSibling(Node L)
-{
-	int bestSibling = rootIndex;
-	float bestCost = Area(Union(L, root));
-	PriorityQueue Q;
-	Q.Push([rootIndex, 0]);
-	while (Q.empty() == false)
-	{
-		[index, inherited_cost] = Q.Pop();
 
+\begin{algorithm}
+\caption{Find best sibling for $L$}
+\label{alg:best_sibling}
+\begin{algorithmic}
+\STATE $S_{best} \gets root$;
+\STATE $C_{best} \gets SA(L \cup root)$
+\STATE $Push(Q, [root, 0])$
+\WHILE{$Q$ is not empty}
+\STATE $(S, C_I) = Pop(Q)$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+\begin{lstlisting}[caption={Branch and bound sibling search}, label={lst:branch_and_bound}, float]
+$S_{best} = root$;
+$C_{best} = SA(L \cup root)$;
+$Q.Push([rootIndex, 0])$;
+while ($Q$ is not em) == false)
+	{
+		[int index, float inherited_cost] = Q.Pop();
 		float lowerBoundCost = Area(L) + inherited_cost;
 		if (lowerBoundCost >= bestCost)
 		{
