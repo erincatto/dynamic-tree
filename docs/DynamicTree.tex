@@ -108,8 +108,12 @@ Figure~\ref{fig:insert_leaf} shows $L$ inserted with $H$ as the sibling. Node $1
 \begin{equation}
 	C_H = SA(11) + \Delta SA(10) + \Delta SA(8) + \Delta SA(7) + \Delta SA(3) + \Delta SA(1)
 \end{equation}
+The increased surface area of a node $i$ is:
+\begin{equation}
+	\Delta SA(i) = SA(i \cup L) - SA(i)
+\end{equation}
 In general the cost of any sibling $S$ choice is the area of the new internal node $P$ plus the increased area of the ancestors. The area of the $P$ is called the \emph{direct cost} and the increased area of the ancestors is the \emph{inherited cost}.
-\[ C_S = SA(P) + \sum_{T \in ancestors(P)} \Delta SA(T) \]
+\[ C_S = SA(P) + \sum_{i \in ancestors(P)} \Delta SA(i) \]
 Note that the area of $L$ is not included the cost function because only the relative cost matters when considering potential siblings for $L$.
 
 \begin{figure}
@@ -124,6 +128,34 @@ For a binary tree with $N$ leaf nodes, there are $2N - 1$ possible siblings. Fin
 
 The \emph{branch and bound} algorithm can be used to accelerate the search for the best sibling. Brand and bound is a recursive algorithm like depth-first search or bread-first search. Instead of using a stack or a queue, branch and bound uses a priority queue, which can be implemented as a min-heap.
 
+As describe by Bittner~\cite{Bittner2013}, branch and bound uses a priority queue to find the best sibling. The branch and bound algorithm requires a lower bound estimate for the cost for a subtree. A lower bound on the cost for any node and the sub-tree below is:
+\begin{equation}
+C_{lower} = SA(L) + \sum_{i \in ancestors(S)} \Delta SA(i)
+\end{equation}
+In this case the direct cost is just the surface area of $L$. This represents the smallest possible parent for $L$ and a sibling. The ancestor cost is what makes the lower bound effective.
+
+The branch and bound algorithm starts by computing the cost of root node:
+\[ C_{root} = SA(root \cup L) \]
+This is set as the best cost, \[C_{best} = C_{root} \] and as the best sibling, \[S_{best} = root\]. The root node is pushed onto the priority queue along with the inherited cost of the root node, which is $0$.
+\begin{lstlisting}[caption={Branch and bound sibling search}, label={lst:branch_and_bound}, float]
+int BestSibling(Node L)
+{
+	int bestSibling = rootIndex;
+	float bestCost = Area(Union(L, root));
+	PriorityQueue Q;
+	Q.Push([rootIndex, 0]);
+	while (Q.empty() == false)
+	{
+		[index, inherited_cost] = Q.Pop();
+
+		float lowerBoundCost = Area(L) + inherited_cost;
+		if (lowerBoundCost >= bestCost)
+		{
+			break;
+		}
+	}
+}	
+\end{lstlisting}
 \section{Object Movement}
 
 \section{Sorted Input}
