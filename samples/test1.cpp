@@ -25,17 +25,19 @@ struct Test1 : Test
 
 	void Create(dtTreeHeuristic heuristic, bool rotate) override
 	{
+		Allocate(1);
+
 		m_tree.m_heuristic = heuristic;
 
-		dtAABB b;
-		b.lowerBound = dtVecSet(-0.5f, -0.5f, -0.5f);
-		b.upperBound = dtVecSet(0.5f, 0.5f, 0.5f);
-		m_tree.CreateProxy(b, rotate);
+		m_boxes[0].lowerBound = dtVecSet(-0.5f, -0.5f, -0.5f);
+		m_boxes[0].upperBound = dtVecSet(0.5f, 0.5f, 0.5f);
+		m_proxies[0] = m_tree.CreateProxy(m_boxes[0], rotate);
 	}
 
 	void Destroy() override
 	{
 		m_tree.Clear();
+		Free();
 	}
 };
 

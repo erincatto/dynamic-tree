@@ -260,6 +260,7 @@ static void DrawUI()
 
 			static int heuristic = int(g_heuristic);
 			ImGui::RadioButton("SAH", &heuristic, int(dt_surfaceAreaHeuristic));
+			ImGui::RadioButton("Box2D", &heuristic, int(dt_box2dHeuristic));
 			ImGui::RadioButton("Manhattan", &heuristic, int(dt_manhattanHeuristic));
 			if (heuristic != g_heuristic)
 			{
@@ -273,6 +274,13 @@ static void DrawUI()
 			if (ImGui::Button("Write Dot"))
 			{
 				g_test->m_tree.WriteDot("dot.txt");
+			}
+
+			if (ImGui::Button("Bottom Up"))
+			{
+				g_test->m_tree.RebuildBottomUp();
+				g_treeHeight = g_test->m_tree.GetHeight();
+				g_treeArea = g_test->m_tree.GetAreaRatio();
 			}
 
 			if (ImGui::Button("Bottom Up"))

@@ -132,7 +132,11 @@ The \emph{branch and bound} algorithm can be used to accelerate the search for t
 
 As describe by Bittner~\cite{Bittner2013}, branch and bound uses a priority queue to find the best sibling. The branch and bound algorithm requires a lower bound estimate for the cost for a subtree. A lower bound on the cost for any node and the sub-tree below is:
 \begin{equation}
-C_{lower} = SA(L) + \sum_{i \in ancestors(S)} \Delta SA(i)
+	C_{lower} = SA(L) + C_I
+\end{equation}
+where
+\begin{equation}
+	C_I = \sum_{i \in ancestors(S)} \Delta SA(i)
 \end{equation}
 In this case the direct cost is just the surface area of $L$. This represents the smallest possible parent for $L$ and a sibling. The ancestor cost is what makes the lower bound effective.
 
@@ -144,12 +148,28 @@ This is set as the best cost, \[C_{best} = C_{root} \] and as the best sibling, 
 \caption{Find best sibling for $L$}
 \label{alg:best_sibling}
 \begin{algorithmic}
-\STATE $S_{best} \gets root$;
-\STATE $C_{best} \gets SA(L \cup root)$
-\STATE $Push(Q, [root, 0])$
+\STATE $S_{best} = root$;
+\STATE $C_{best} = SA(L \cup root)$
+\STATE push($Q$, [$root$, $\Delta SA(root)$])
 \WHILE{$Q$ is not empty}
-\STATE $(S, C_I) = Pop(Q)$
+\STATE [$S$, $C_I$] = pop($Q$)
+\STATE $C_{lower} = C_I + SA(L)$
+\IF{$C_{lower} >= C_{best}$}
+\RETURN $S_{best}$
+\ENDIF
+\FORALL{children $k$ of $S$}
+\STATE $C_k = SA(S_k \cup L) + C_I$
+\IF{$C_k < C_{best}$}
+\STATE $C_{best} = C_k$
+\STATE $S_{best} = S_k$
+\ENDIF
+\STATE $C_I = C_k - SA(S_k)$
+\IF{$C_I + SA(L) < C_{best}$}
+\STATE push($Q$, [$S_k$, $C_I$])
+\ENDIF
+\ENDFOR
 \ENDWHILE
+\RETURN $S_{best}$
 \end{algorithmic}
 \end{algorithm}
 

@@ -12,6 +12,7 @@
 #pragma once
 
 #include <math.h>
+#include <immintrin.h>
 
 static const float dtPi = 3.141592654f;
 
@@ -40,203 +41,265 @@ inline float dtAbs(float a)
 	return a > 0.0f ? a : -a;
 }
 
-inline void dtSwap(int& a, int& b)
+template<typename T>
+inline void dtSwap(T& a, T& b)
 {
-	int t = a;
+	T temp = a;
 	a = b;
-	b = t;
+	b = temp;
 }
 
-struct dtVec { float x, y, z, w; };
+typedef __m128 dtVec;
 
 static const dtVec dtVec_Zero = { 0.0f, 0.0f, 0.0f, 0.0f };
 static const dtVec dtVec_UnitX = { 1.0f, 0.0f, 0.0f, 0.0f };
 static const dtVec dtVec_UnitY = { 0.0f, 1.0f, 0.0f, 0.0f };
 static const dtVec dtVec_UnitZ = { 0.0f, 0.0f, 1.0f, 0.0f };
-//static const dtVec dtQuat_Identity = { 0.0f, 0.0f, 0.0f, 1.0f };
 
 inline dtVec dtVecSet(float x, float y, float z)
 {
-	dtVec v;
-	v.x = x; v.y = y; v.z = z; v.w = 0.0f;
-	return v;
+	return _mm_set_ps(0.0f, z, y, x);
 }
 
 inline dtVec dtVecSet(float x, float y, float z, float w)
 {
-	dtVec v;
-	v.x = x; v.y = y; v.z = z; v.w = w;
-	return v;
+	return _mm_set_ps(w, z, y, x);
+}
+
+inline dtVec dtVecSet(dtVec& x, dtVec& y, dtVec& z)
+{
+	dtVec r;
+	r = _mm_unpacklo_ps(x, y);	// (x, y, x, y)
+	r = _mm_movelh_ps(r, z);	// (x, y, z, z)
+	return r;
+}
+
+inline dtVec dtSplat(float x)
+{
+	return _mm_set1_ps(x);
+}
+
+inline dtVec dtSetX(const dtVec& v, float x)
+{
+	dtVec t = _mm_set_ss(x);
+	return _mm_move_ss(v, t);
+}
+
+inline dtVec dtSetY(const dtVec& v, float y)
+{
+	dtVec r = _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 2, 0, 1));
+	dtVec t = _mm_set_ss(y);
+	r = _mm_move_ss(r, t);
+	r = _mm_shuffle_ps(r, r, _MM_SHUFFLE(3, 2, 0, 1));
+	return r;
+}
+
+inline dtVec dtSetZ(const dtVec& v, float z)
+{
+	dtVec r = _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 0, 1, 2));
+	dtVec t = _mm_set_ss(z);
+	r = _mm_move_ss(r, t);
+	r = _mm_shuffle_ps(r, r, _MM_SHUFFLE(3, 0, 1, 2));
+	return r;
+}
+
+inline dtVec dtSetW(const dtVec& v, float w)
+{
+	dtVec r = _mm_shuffle_ps(v, v, _MM_SHUFFLE(0, 2, 1, 3));
+	dtVec t = _mm_set_ss(w);
+	r = _mm_move_ss(r, t);
+	r = _mm_shuffle_ps(r, r, _MM_SHUFFLE(0, 2, 1, 3));
+	return r;
+}
+
+inline float dtGetX(const dtVec& v)
+{
+	float s;
+	_mm_store_ss(&s, v);
+	return s;
+}
+
+inline float dtGetY(const dtVec& v)
+{
+	dtVec t = _mm_shuffle_ps(v, v, _MM_SHUFFLE(1, 1, 1, 1));
+	float s;
+	_mm_store_ss(&s, t);
+	return s;
+}
+
+inline float dtGetZ(const dtVec& v)
+{
+	dtVec t = _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 2, 2, 2));
+	float s;
+	_mm_store_ss(&s, t);
+	return s;
+}
+
+inline float dtGetW(const dtVec& v)
+{
+	dtVec t = _mm_shuffle_ps(v, v, _MM_SHUFFLE(3, 3, 3, 3));
+	float s;
+	_mm_store_ss(&s, t);
+	return s;
+}
+
+inline float dtGet(const dtVec& v, int index)
+{
+	switch (index)
+	{
+	case 0:
+		return dtGetX(v);
+	case 1:
+		return dtGetY(v);
+	case 2:
+		return dtGetZ(v);
+	default:
+		return dtGetW(v);
+	}
 }
 
 inline dtVec dtMin(const dtVec& a, const dtVec& b)
 {
-	dtVec v;
-	v.x = a.x < b.x ? a.x : b.x;
-	v.y = a.y < b.y ? a.y : b.y;
-	v.z = a.z < b.z ? a.z : b.z;
-	v.w = a.w < b.w ? a.w : b.w;
-	return v;
+	return _mm_min_ps(a, b);
 }
 
 inline dtVec dtMax(const dtVec& a, const dtVec& b)
 {
-	dtVec v;
-	v.x = a.x > b.x ? a.x : b.x;
-	v.y = a.y > b.y ? a.y : b.y;
-	v.z = a.z > b.z ? a.z : b.z;
-	v.w = a.w > b.w ? a.w : b.w;
-	return v;
+	return _mm_max_ps(a, b);
 }
 
 inline dtVec operator + (const dtVec& a, const dtVec& b)
 {
-	return { a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
+	return _mm_add_ps(a, b);
 }
 
 inline dtVec operator - (const dtVec& a, const dtVec& b)
 {
-	return { a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w };
+	return _mm_sub_ps(a, b);
 }
 
 inline dtVec& operator += (dtVec& a, const dtVec& b)
 {
-	a.x += b.x;
-	a.y += b.y;
-	a.z += b.z;
-	a.w += b.w;
+	a = _mm_add_ps(a, b);
 	return a;
 }
 
 inline dtVec& operator -= (dtVec& a, const dtVec& b)
 {
-	a.x -= b.x;
-	a.y -= b.y;
-	a.z -= b.z;
-	a.w -= b.w;
+	a = _mm_sub_ps(a, b);
 	return a;
 }
 
 inline dtVec operator * (float a, const dtVec& b)
 {
-	return { a * b.x, a * b.y, a * b.z, a * b.w };
+	dtVec av = _mm_set1_ps(a);
+	return _mm_mul_ps(av, b);
+}
+
+inline dtVec operator * (dtVec& a, const dtVec& b)
+{
+	return _mm_mul_ps(a, b);
 }
 
 inline dtVec operator - (const dtVec& a)
 {
-	return { -a.x, -a.y, -a.z, -a.w };
+	return _mm_sub_ps(_mm_setzero_ps(), a);
+}
+
+inline dtVec dtAbs(const dtVec& a)
+{
+	return _mm_max_ps(a, -a);
 }
 
 inline bool operator == (const dtVec& a, const dtVec& b)
 {
-	return a.x == b.x && a.y == b.y && a.z == b.z && a.w == b.w;
+	dtVec t = _mm_cmpeq_ps(a, b);
+	return _mm_movemask_ps(t) == 0xF;
 }
 
-inline float dtDot3(const dtVec& a, const dtVec& b)
+inline dtVec dtDot3(const dtVec& a, const dtVec& b)
 {
-	return a.x * b.x + a.y * b.y + a.z * b.z;
+	dtVec t = _mm_mul_ps(a, b);
+	dtVec xx = _mm_shuffle_ps(t, t, _MM_SHUFFLE(0, 0, 0, 0));
+	dtVec yy = _mm_shuffle_ps(t, t, _MM_SHUFFLE(1, 1, 1, 1));
+	dtVec zz = _mm_shuffle_ps(t, t, _MM_SHUFFLE(2, 2, 2, 2));
+	return _mm_add_ps(_mm_add_ps(xx, yy), zz);
 }
 
 inline dtVec dtCross(const dtVec& a, const dtVec& b)
 {
-	return { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x };
+	// http://threadlocalmutex.com/?p=8
+	dtVec a_yzx = _mm_shuffle_ps(a, a, _MM_SHUFFLE(3, 0, 2, 1));
+	dtVec b_yzx = _mm_shuffle_ps(b, b, _MM_SHUFFLE(3, 0, 2, 1));
+	dtVec c = _mm_sub_ps(_mm_mul_ps(a, b_yzx), _mm_mul_ps(a_yzx, b));
+	return _mm_shuffle_ps(c, c, _MM_SHUFFLE(3, 0, 2, 1));
 }
 
 inline dtVec dtNormalize3(const dtVec& v)
 {
-	float len = sqrtf(dtDot3(v, v));
-	return { v.x / len, v.y / len, v.z / len, 0.0f };
+	dtVec length = _mm_sqrt_ps(dtDot3(v, v));
+	return _mm_div_ps(v, length);
 }
-
-#if 0
-inline float dtDot4(const dtVec& a, const dtVec& b)
-{
-	return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
-}
-
-inline dtVec dtNormalize4(const dtVec& v)
-{
-	float len = sqrtf(dtDot3(v, v));
-	return { v.x / len, v.y / len, v.z / len, v.w / len };
-}
-
-inline dtVec dtConjugate(const dtVec& q)
-{
-	return { -q.x, -q.y, -q.z, q.w };
-}
-
-inline dtVec dtRotate(const dtVec& q, const dtVec& u)
-{
-	// Rotate u by q
-	// v = q * u * qc
-	// This simplifies to:
-	// v = u + 2 * cross(q.v, cross(q.v, u) + q.w * u)
-	dtVec t = dtCross(q, u) + q.w * u;
-	t = dtCross(q, t);
-	dtVec v = u + t + t;
-	return v;
-}
-#endif
 
 struct dtMtx
 {
 	dtVec cx, cy, cz, cw;
 };
 
-// http://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
-//     [1-2yy-2zz 2xy-2zw   2xz+2yw  ]
-// R = [2xy+2zw   1-2xx-2zz 2yz-2xw  ]
-//     [2xz-2yw   2yz+2xw   1-2xx-2yy]
-inline dtMtx dtMtxFromQuat(const dtVec& q, const dtVec& p)
-{
-	float x = q.x;
-	float y = q.y;
-	float z = q.z;
-	float w = q.w;
-
-	dtMtx R;
-	R.cx = { 1.0f - 2.0f * y * y - 2.0f * z * z, 2.0f * x * y + 2.0f * z * w, 2.0f * x * z - 2.0f * y * w, 0.0f };
-	R.cy = { 2.0f * x * y - 2.0f * z * w, 1.0f - 2.0f * x * x - 2.0f * z * z, 2.0f * y * z + 2.0f * x * w, 0.0f };
-	R.cz = { 2.0f * x * z + 2.0f * y * w, 2.0f * y * z - 2.0f * x * w, 1.0f - 2.0f * x * x - 2.0f * y * y, 0.0f };
-	R.cw = p;
-	return R;
-}
-
 inline dtVec dtTransformVector(const dtMtx& m, const dtVec& v)
 {
-	return {
-		m.cx.x * v.x + m.cy.x * v.y + m.cz.x * v.z,
-		m.cx.y * v.x + m.cy.y * v.y + m.cz.y * v.z,
-		m.cx.z * v.x + m.cy.z * v.y + m.cz.z * v.z
-	};
+	dtVec x = _mm_shuffle_ps(v, v, _MM_SHUFFLE(0, 0, 0, 0));
+	dtVec y = _mm_shuffle_ps(v, v, _MM_SHUFFLE(1, 1, 1, 1));
+	dtVec z = _mm_shuffle_ps(v, v, _MM_SHUFFLE(2, 2, 2, 2));
+
+	dtVec r = _mm_mul_ps(m.cx, x);
+	r = _mm_add_ps(_mm_mul_ps(m.cy, y), r);
+	r = _mm_add_ps(_mm_mul_ps(m.cz, z), r);
+	return r;
 }
 
 inline dtVec dtTransformPoint(const dtMtx& m, const dtVec& p)
 {
-	return {
-		m.cx.x * p.x + m.cy.x * p.y + m.cz.x * p.z + m.cw.x,
-		m.cx.y * p.x + m.cy.y * p.y + m.cz.y * p.z + m.cw.y,
-		m.cx.z * p.x + m.cy.z * p.y + m.cz.z * p.z + m.cw.z
-	};
+	dtVec x = _mm_shuffle_ps(p, p, _MM_SHUFFLE(0, 0, 0, 0));
+	dtVec y = _mm_shuffle_ps(p, p, _MM_SHUFFLE(1, 1, 1, 1));
+	dtVec z = _mm_shuffle_ps(p, p, _MM_SHUFFLE(2, 2, 2, 2));
+
+	dtVec r = _mm_mul_ps(m.cx, x);
+	r = _mm_add_ps(_mm_mul_ps(m.cy, y), r);
+	r = _mm_add_ps(_mm_mul_ps(m.cz, z), r);
+	r = _mm_add_ps(m.cw, r);
+	return r;
 }
 
 inline dtVec dtInvTransformVector(const dtMtx& m, const dtVec& v)
 {
-	return {
-		m.cx.x * v.x + m.cx.y * v.y + m.cx.z * v.z,
-		m.cy.x * v.x + m.cy.y * v.y + m.cy.z * v.z,
-		m.cz.x * v.x + m.cz.y * v.y + m.cz.z * v.z
-	};
+	dtVec x = dtDot3(m.cx, v);
+	dtVec y = dtDot3(m.cy, v);
+	dtVec z = dtDot3(m.cz, v);
+	return dtVecSet(x, y, z);
 }
 
 inline dtVec dtInvTransformPoint(const dtMtx& m, const dtVec& p)
 {
-	dtVec r = p - m.cw;
-	return {
-		m.cx.x * r.x + m.cx.y * r.y + m.cx.z * r.z,
-		m.cy.x * r.x + m.cy.y * r.y + m.cy.z * r.z,
-		m.cz.x * r.x + m.cz.y * r.y + m.cz.z * r.z
-	};
+	dtVec v = _mm_sub_ps(p, m.cw);
+	dtVec x = dtDot3(m.cx, v);
+	dtVec y = dtDot3(m.cy, v);
+	dtVec z = dtDot3(m.cz, v);
+	return dtVecSet(x, y, z);
+}
+
+inline dtMtx dmTranspose33(const dtMtx& a)
+{
+	dtVec t1 = _mm_shuffle_ps(a.cx, a.cy, _MM_SHUFFLE(0, 0, 0, 0));
+	dtVec t2 = _mm_shuffle_ps(a.cx, a.cy, _MM_SHUFFLE(1, 1, 1, 1));
+	dtVec t3 = _mm_shuffle_ps(a.cx, a.cy, _MM_SHUFFLE(2, 2, 2, 2));
+
+	dtMtx b;
+	b.cx = _mm_shuffle_ps(t1, a.cz, _MM_SHUFFLE(3, 0, 2, 0));
+	b.cy = _mm_shuffle_ps(t2, a.cz, _MM_SHUFFLE(3, 1, 2, 0));
+	b.cz = _mm_shuffle_ps(t3, a.cz, _MM_SHUFFLE(3, 2, 2, 0));
+	b.cw = _mm_setzero_ps();
+	return b;
 }
 
 // y = R * x + p
@@ -244,10 +307,7 @@ inline dtVec dtInvTransformPoint(const dtMtx& m, const dtVec& p)
 //   = RT * y - RT * p
 inline dtMtx dtMtx_InvertOrtho(const dtMtx& m)
 {
-	dtMtx im;
-	im.cx = { m.cx.x, m.cy.x, m.cz.x };
-	im.cy = { m.cx.y, m.cy.y, m.cz.y };
-	im.cz = { m.cx.z, m.cy.z, m.cz.z };
+	dtMtx im = dmTranspose33(m);
 	im.cw = -dtTransformVector(im, m.cw);
 	return im;
 }
@@ -269,21 +329,20 @@ inline dtAABB dtUnion(const dtAABB& a, const dtAABB& b)
 inline float dtArea(const dtAABB& a)
 {
 	dtVec w = a.upperBound - a.lowerBound;
-	return 2.0f * (w.x * w.y + w.y * w.z + w.z * w.x);
+	dtVec x = _mm_shuffle_ps(w, w, _MM_SHUFFLE(0, 0, 0, 0));
+	dtVec y = _mm_shuffle_ps(w, w, _MM_SHUFFLE(1, 1, 1, 1));
+	dtVec z = _mm_shuffle_ps(w, w, _MM_SHUFFLE(2, 2, 2, 2));
+	dtVec area = x * y + y * z + z * x;
+	area = area + area;
+
+	float s;
+	_mm_store_ss(&s, area);
+	return s;
 }
 
-inline bool dtContains(const dtAABB& a, const dtAABB& b)
+inline dtVec dtCenter(const dtAABB& a)
 {
-	dtVec upper = a.upperBound - b.upperBound;
-	dtVec lower = b.lowerBound - a.lowerBound;
-
-	if (upper.x < 0.0f || upper.y < 0.0f || upper.z < 0.0f
-		|| lower.x < 0.0f || lower.y < 0.0f || lower.z < 0.0f)
-	{
-		return false;
-	}
-
-	return true;
+	return dtSplat(0.5f) * (a.lowerBound + a.upperBound);
 }
 
 class dtTimer

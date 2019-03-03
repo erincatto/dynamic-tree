@@ -121,7 +121,7 @@ dtMtx Camera::GetCameraMatrix() const
 dtMtx Camera::GetViewMatrix() const
 {
 	dtMtx view = dtMtx_InvertOrtho(m_matrix);
-	view.cw.w = 1.0f;
+	view.cw = dtSetW(view.cw, 1.0f);
 	return view;
 }
 
@@ -171,9 +171,9 @@ bool Camera::ConvertWorldToScreen(float& xs, float& ys, dtVec p) const
 	// Get point in camera frame
 	dtVec pc = dtInvTransformPoint(m_matrix, p);
 
-	float xc = pc.x;
-	float yc = pc.y;
-	float zc = pc.z;
+	float xc = dtGetX(pc);
+	float yc = dtGetY(pc);
+	float zc = dtGetZ(pc);
 
 	if (zc < -m_far || -m_near < zc)
 	{
@@ -371,8 +371,7 @@ struct GLDynamicPoints
             Flush();
         }
 
-        m_vertices[m_count] = v;
-		m_vertices[m_count].w = 1.0f;
+        m_vertices[m_count] = dtSetW(v, 1.0f);
         m_colors[m_count] = c;
         m_sizes[m_count] = size;
         ++m_count;
@@ -522,13 +521,11 @@ struct GLDynamicLines
             Flush();
         }
 
-		m_vertices[m_count] = v1;
-		m_vertices[m_count].w = 1.0f;
+		m_vertices[m_count] = dtSetW(v1, 1.0f);
         m_colors[m_count] = c;
         ++m_count;
  
-		m_vertices[m_count] = v2;
-		m_vertices[m_count].w = 1.0f;
+		m_vertices[m_count] = dtSetW(v2, 1.0f);
         m_colors[m_count] = c;
         ++m_count;
     }
@@ -654,9 +651,9 @@ void Draw::DrawBox(const dtAABB& box, float extension, const Color& color)
 {
 	dtVec extents = 0.5f * (box.upperBound - box.lowerBound);
 	dtVec center = 0.5f * (box.lowerBound + box.upperBound);
-    float hx = extents.x + extension;
-    float hy = extents.y + extension;
-    float hz = extents.z + extension;
+    float hx = dtGetX(extents) + extension;
+    float hy = dtGetY(extents) + extension;
+    float hz = dtGetZ(extents) + extension;
 
 	dtVec p1 = dtVecSet(-hx, -hy, hz) + center;
     dtVec p2 = dtVecSet(-hx, hy, hz) + center;

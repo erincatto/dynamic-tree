@@ -398,22 +398,24 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 
 		// Child push order doesn't matter since the heap will sort them.
 
+		const float bias = 1.0f;
+
 		{
 			const dtNode& child1 = m_nodes[node.child1];
 			float directCost = dtArea(dtUnion(child1.aabb, aabbL));
 			float totalCost = directCost + candidate.inducedCost;
-			if (totalCost <= bestCost)
+			if (totalCost < bestCost)
 			{
 				bestCost = totalCost;
 				bestSibling = node.child1;
 			}
 
 			float inducedCost = totalCost - dtArea(child1.aabb);
-			if (inducedCost + areaL < bestCost)
+			if (inducedCost + areaL < bias * bestCost)
 			{
 				dtCandidateNode candidate1;
 				candidate1.index = node.child1;
-				candidate1.inducedCost = totalCost - dtArea(child1.aabb);
+				candidate1.inducedCost = inducedCost;
 				m_heap.push_back(candidate1);
 				std::push_heap(m_heap.begin(), m_heap.end());
 			}
@@ -423,18 +425,18 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 			const dtNode& child2 = m_nodes[node.child2];
 			float directCost = dtArea(dtUnion(child2.aabb, aabbL));
 			float totalCost = directCost + candidate.inducedCost;
-			if (totalCost <= bestCost)
+			if (totalCost < bestCost)
 			{
 				bestCost = totalCost;
 				bestSibling = node.child2;
 			}
 
 			float inducedCost = totalCost - dtArea(child2.aabb);
-			if (inducedCost + areaL < bestCost)
+			if (inducedCost + areaL < bias * bestCost)
 			{
 				dtCandidateNode candidate2;
 				candidate2.index = node.child2;
-				candidate2.inducedCost = totalCost - dtArea(child2.aabb);
+				candidate2.inducedCost = inducedCost;
 				m_heap.push_back(candidate2);
 				std::push_heap(m_heap.begin(), m_heap.end());
 			}
@@ -543,11 +545,157 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 	Validate();
 }
 
+void dtTree::InsertLeafBox2D(int leaf, bool rotate)
+{
+	++m_insertionCount;
+
+	if (m_root == dt_nullNode)
+	{
+		m_root = leaf;
+		m_nodes[m_root].parent = dt_nullNode;
+		return;
+	}
+
+	dtAABB aabbL = m_nodes[leaf].aabb;
+	float areaL = dtArea(aabbL);
+
+	// Stage 1: find the best sibling for this node
+	int index = m_root;
+	while (m_nodes[index].isLeaf == false)
+	{
+		int child1 = m_nodes[index].child1;
+		int child2 = m_nodes[index].child2;
+
+		float areaP = dtArea(m_nodes[index].aabb);
+
+		dtAABB aabbG = dtUnion(m_nodes[index].aabb, aabbL);
+		float areaG = dtArea(aabbG);
+
+		// Cost of creating a grand parent G for this node P and the new leaf L
+		float Cb = areaG;
+
+		// Minimum cost of pushing the leaf further down the tree
+		float deltaAreaP = areaG - areaP;
+
+		// Cost of descending into child 1
+		float C1;
+		if (m_nodes[child1].isLeaf)
+		{
+			// Child 1 is a leaf
+			// Cost of creating new node X and increasing area of node P
+			dtAABB aabbX = dtUnion(aabbL, m_nodes[child1].aabb);
+			C1 = deltaAreaP + dtArea(aabbX);
+		}
+		else
+		{
+			// Child 1 is an internal node
+			// Cost of creating new node Y and increasing area of node P and node 1
+			dtAABB aabb1 = dtUnion(aabbL, m_nodes[child1].aabb);
+			float deltaArea1 = dtArea(aabb1) - dtArea(m_nodes[child1].aabb);
+			C1 = deltaAreaP + deltaArea1 + areaL;
+		}
+
+		// Cost of descending into child 2
+		float C2;
+		if (m_nodes[child2].isLeaf)
+		{
+			// Child 2 is a leaf
+			// Cost of creating new node X and increasing area of node P
+			dtAABB aabbX = dtUnion(aabbL, m_nodes[child2].aabb);
+			C2 = deltaAreaP + dtArea(aabbX);
+		}
+		else
+		{
+			// Child 2 is an internal node
+			// Cost of creating new node Y and increasing area of node P and node 2
+			dtAABB aabb2 = dtUnion(aabbL, m_nodes[child2].aabb);
+			float deltaArea2 = dtArea(aabb2) - dtArea(m_nodes[child2].aabb);
+			C2 = deltaAreaP + deltaArea2 + areaL;
+		}
+
+		// Descend according to the minimum cost.
+		if (0.9f * Cb < C1 && 0.9f * Cb < C2)
+		{
+			break;
+		}
+
+		// Descend
+		if (C1 < C2)
+		{
+			index = child1;
+		}
+		else
+		{
+			index = child2;
+		}
+	}
+
+	int sibling = index;
+
+	// Stage 2: create a new parent
+	int oldParent = m_nodes[sibling].parent;
+	int newParent = AllocateNode();
+	m_nodes[newParent].parent = oldParent;
+	m_nodes[newParent].aabb = dtUnion(aabbL, m_nodes[sibling].aabb);
+	m_nodes[newParent].height = m_nodes[sibling].height + 1;
+
+	if (oldParent != dt_nullNode)
+	{
+		// The sibling was not the root.
+		if (m_nodes[oldParent].child1 == sibling)
+		{
+			m_nodes[oldParent].child1 = newParent;
+		}
+		else
+		{
+			m_nodes[oldParent].child2 = newParent;
+		}
+
+		m_nodes[newParent].child1 = sibling;
+		m_nodes[newParent].child2 = leaf;
+		m_nodes[sibling].parent = newParent;
+		m_nodes[leaf].parent = newParent;
+	}
+	else
+	{
+		// The sibling was the root.
+		m_nodes[newParent].child1 = sibling;
+		m_nodes[newParent].child2 = leaf;
+		m_nodes[sibling].parent = newParent;
+		m_nodes[leaf].parent = newParent;
+		m_root = newParent;
+	}
+
+	// Stage 3: walk back up the tree fixing heights and AABBs
+	index = m_nodes[leaf].parent;
+	while (index != dt_nullNode)
+	{
+		int child1 = m_nodes[index].child1;
+		int child2 = m_nodes[index].child2;
+
+		assert(child1 != dt_nullNode);
+		assert(child2 != dt_nullNode);
+
+		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
+		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
+
+		if (rotate)
+		{
+			Rotate(index);
+		}
+
+		index = m_nodes[index].parent;
+	}
+
+	Validate();
+}
+
 // 
 static inline float dtManhattan(const dtAABB& a, const dtAABB& b)
 {
 	dtVec d = (a.lowerBound + a.upperBound) - (b.lowerBound + b.upperBound);
-	return fabsf(d.x) + fabsf(d.y) + fabsf(d.z);
+	dtVec absD = dtAbs(d);
+	return dtGetX(absD) + dtGetY(absD) + dtGetZ(absD);
 }
 
 //
@@ -646,15 +794,19 @@ void dtTree::InsertLeafManhattan(int leaf, bool rotate)
 	Validate();
 }
 
-void dtTree::InsertLeaf(int node, bool rotate)
+void dtTree::InsertLeaf(int leaf, bool rotate)
 {
 	if (m_heuristic == dt_surfaceAreaHeuristic)
 	{
-		InsertLeafSAH2(node, rotate);
+		InsertLeafSAH2(leaf, rotate);
+	}
+	else if (m_heuristic == dt_box2dHeuristic)
+	{
+		InsertLeafBox2D(leaf, rotate);
 	}
 	else
 	{
-		InsertLeafManhattan(node, rotate);
+		InsertLeafManhattan(leaf, rotate);
 	}
 }
 
@@ -1458,4 +1610,186 @@ void dtTree::WriteDot(const char* fileName) const
 	}
 
 	fclose(file);
+}
+
+#define dt_binCount 64
+
+struct dtTreeBin
+{
+	dtAABB aabb;
+	int count;
+};
+
+struct dtTreePlane
+{
+	dtAABB leftAABB;
+	dtAABB rightAABB;
+	int leftCount;
+	int rightCount;
+};
+
+void dtTree::BuildTopDownSAH(int* proxies, dtAABB* boxes, int count)
+{
+	assert(m_nodes == nullptr);
+
+	m_nodeCapacity = 2 * count - 1;
+	m_nodes = (dtNode*)malloc(m_nodeCapacity * sizeof(dtNode));
+	memset(m_nodes, 0, m_nodeCapacity * sizeof(dtNode));
+
+	m_nodeCount = count;
+	for (int i = 0; i < count; ++i)
+	{
+		m_nodes[i].aabb = boxes[i];
+		m_nodes[i].child1 = i;
+		m_nodes[i].child2 = dt_nullNode;
+		m_nodes[i].height = 0;
+		m_nodes[i].isLeaf = true;
+		m_nodes[i].next = -1;
+		m_nodes[i].parent = dt_nullNode;
+	}
+
+	dtTreeBin bins[dt_binCount];
+	dtTreePlane planes[dt_binCount - 1];
+	m_root = SortBoxes(dt_nullNode, m_nodes, count, bins, planes);
+
+	assert(m_nodeCount == m_nodeCapacity);
+
+	for (int i = 0; i < m_nodeCount; ++i)
+	{
+		const dtNode& n = m_nodes[i];
+		if (n.isLeaf)
+		{
+			assert(0 <= n.child1 && n.child1 < count);
+			proxies[n.child1] = i;
+		}
+	}
+
+	Validate();
+}
+
+// "On Fast Construction of SAH-based Bounding Volume Hierarchies" by Ingo Wald
+int dtTree::SortBoxes(int parentIndex, dtNode* leaves, int count, dtTreeBin* bins, dtTreePlane* planes)
+{
+	if (count == 1)
+	{
+		return leaves[0].child1;
+	}
+
+	dtVec center = dtCenter(leaves[0].aabb);
+	dtAABB centroidAABB;
+	centroidAABB.lowerBound = center;
+	centroidAABB.upperBound = center;
+
+	for (int i = 1; i < count; ++i)
+	{
+		center = dtCenter(leaves[i].aabb);
+		centroidAABB.lowerBound = dtMin(centroidAABB.lowerBound, center);
+		centroidAABB.upperBound = dtMax(centroidAABB.upperBound, center);
+	}
+
+	dtVec d = centroidAABB.upperBound - centroidAABB.lowerBound;
+
+	int axisIndex;
+	float invD;
+	if (dtGetX(d) > dtGetY(d) && dtGetX(d) > dtGetZ(d))
+	{
+		axisIndex = 0;
+		invD = dtGetX(d);
+	}
+	else if (dtGetY(d) > dtGetZ(d))
+	{
+		axisIndex = 1;
+		invD = dtGetY(d);
+	}
+	else
+	{
+		axisIndex = 2;
+		invD = dtGetZ(d);
+	}
+
+	invD = invD > 0.0f ? 1.0f / invD : 0.0f;
+
+	for (int i = 0; i < dt_binCount; ++i)
+	{
+		bins[i].aabb.lowerBound = dtSplat(FLT_MAX);
+		bins[i].aabb.upperBound = dtSplat(-FLT_MAX);
+		bins[i].count = 0;
+	}
+
+	float binCount = float(dt_binCount);
+	float minC = dtGet(centroidAABB.lowerBound, axisIndex);
+	for (int i = 0; i < count; ++i)
+	{
+		dtVec c = dtCenter(leaves[i].aabb);
+		int binIndex = int(binCount * (dtGet(c, axisIndex) - minC) * invD);
+		binIndex = dtClamp(binIndex, 0, dt_binCount - 1);
+		leaves[i].next = binIndex;
+		bins[binIndex].count += 1;
+		bins[binIndex].aabb = dtUnion(bins[binIndex].aabb, leaves[i].aabb);
+	}
+
+	int planeCount = dt_binCount - 1;
+
+	planes[0].leftCount = bins[0].count;
+	planes[0].leftAABB = bins[0].aabb;
+	for (int i = 1; i < planeCount; ++i)
+	{
+		planes[i].leftCount = planes[i - 1].leftCount + bins[i].count;
+		planes[i].leftAABB = dtUnion(planes[i - 1].leftAABB, bins[i].aabb);
+	}
+
+	planes[planeCount - 1].rightCount = bins[planeCount].count;
+	planes[planeCount - 1].rightAABB = bins[planeCount].aabb;
+	for (int i = planeCount - 2; i >= 0; --i)
+	{
+		planes[i].rightCount = planes[i + 1].rightCount + bins[i + 1].count;
+		planes[i].rightAABB = dtUnion(planes[i + 1].rightAABB, bins[i + 1].aabb);
+	}
+
+	float minCost = FLT_MAX;
+	int bestPlane = 0;
+	for (int i = 0; i < planeCount; ++i)
+	{
+		float leftArea = dtArea(planes[i].leftAABB);
+		float rightArea = dtArea(planes[i].rightAABB);
+		int leftCount = planes[i].leftCount;
+		int rightCount = planes[i].rightCount;
+
+		float cost = leftCount * leftArea + rightCount * rightArea;
+		if (cost < minCost)
+		{
+			bestPlane = i;
+			minCost = cost;
+		}
+	}
+
+	assert(m_nodeCount < m_nodeCapacity);
+	int nodeIndex = m_nodeCount++;
+	dtNode& node = m_nodes[nodeIndex];
+	node.aabb = dtUnion(planes[bestPlane].leftAABB, planes[bestPlane].rightAABB);
+	node.parent = parentIndex;
+	node.isLeaf = false;
+
+	int i1 = -1;
+	for (int i2 = 0; i2 < count; ++i2)
+	{
+		int binIndex = leaves[i2].next;
+		if (binIndex <= bestPlane)
+		{
+			++i1;
+			dtSwap(leaves[i1], leaves[i2]);
+		}
+	}
+
+	int leftCount = i1 + 1;
+	int rightCount = count - leftCount;
+
+	node.child1 = SortBoxes(nodeIndex, leaves, leftCount, bins, planes);
+	node.child2 = SortBoxes(nodeIndex, leaves + leftCount, rightCount, bins, planes);
+
+	const dtNode& child1 = m_nodes[node.child1];
+	const dtNode& child2 = m_nodes[node.child2];
+
+	node.height = 1 + dtMax(child1.height, child2.height);
+	return nodeIndex;
 }

@@ -19,7 +19,8 @@
 enum dtTreeHeuristic
 {
 	dt_surfaceAreaHeuristic = 0,
-	dt_manhattanHeuristic = 1
+	dt_box2dHeuristic = 1,
+	dt_manhattanHeuristic = 2
 };
 
 /// A node in the dynamic tree. The client does not interact with this directly.
@@ -98,16 +99,21 @@ struct dtTree
 	/// Build an optimal tree. Very expensive. For testing.
 	void RebuildBottomUp();
 
+	/// Build top down using SAH
+	void BuildTopDownSAH(int* proxies, dtAABB* aabbs, int count);
+	int SortBoxes(int parentIndex, dtNode* leaves, int count, struct dtTreeBin* bins, struct dtTreePlane* planes);
+
 	void WriteDot(const char* fileName) const;
 
 	int AllocateNode();
 	void FreeNode(int node);
 
-	void InsertLeaf(int node, bool rotate);
-	void InsertLeafSAH1(int node, bool rotate);
-	void InsertLeafSAH2(int node, bool rotate);
-	void InsertLeafManhattan(int node, bool rotate);
-	void RemoveLeaf(int node, bool rotate);
+	void InsertLeaf(int leaf, bool rotate);
+	void InsertLeafSAH1(int leaf, bool rotate);
+	void InsertLeafSAH2(int leaf, bool rotate);
+	void InsertLeafBox2D(int leaf, bool rotate);
+	void InsertLeafManhattan(int leaf, bool rotate);
+	void RemoveLeaf(int leaf, bool rotate);
 
 	void Rotate(int index);
 
