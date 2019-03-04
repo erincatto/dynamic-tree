@@ -70,7 +70,7 @@ namespace
 	int g_heapCount = 0;
 	float g_treeArea = 0.0f;
 
-	dtTreeHeuristic g_heuristic = dt_surfaceAreaHeuristic;
+	dtTreeHeuristic g_heuristic = dt_sah;
 	bool g_rotate = true;
 	bool g_drawInternal = true;
 
@@ -259,9 +259,10 @@ static void DrawUI()
 			ImGui::SliderInt("##Shuffle", &g_shuffleIter, 0, 100, "shuffle %d");
 
 			static int heuristic = int(g_heuristic);
-			ImGui::RadioButton("SAH", &heuristic, int(dt_surfaceAreaHeuristic));
-			ImGui::RadioButton("Box2D", &heuristic, int(dt_box2dHeuristic));
-			ImGui::RadioButton("Manhattan", &heuristic, int(dt_manhattanHeuristic));
+			ImGui::RadioButton("SAH", &heuristic, int(dt_sah));
+			ImGui::RadioButton("Bittner", &heuristic, int(dt_bittner));
+			ImGui::RadioButton("Box2D", &heuristic, int(dt_box2d));
+			ImGui::RadioButton("Manhattan", &heuristic, int(dt_manhattan));
 			if (heuristic != g_heuristic)
 			{
 				g_heuristic = dtTreeHeuristic(heuristic);
@@ -278,14 +279,14 @@ static void DrawUI()
 
 			if (ImGui::Button("Bottom Up"))
 			{
-				g_test->m_tree.RebuildBottomUp();
+				g_test->RebuildBottomUp();
 				g_treeHeight = g_test->m_tree.GetHeight();
 				g_treeArea = g_test->m_tree.GetAreaRatio();
 			}
 
-			if (ImGui::Button("Bottom Up"))
+			if (ImGui::Button("Top Down"))
 			{
-				g_test->m_tree.RebuildBottomUp();
+				g_test->RebuildTopDown();
 				g_treeHeight = g_test->m_tree.GetHeight();
 				g_treeArea = g_test->m_tree.GetAreaRatio();
 			}

@@ -11,6 +11,7 @@
 
 #include "test.h"
 
+// Ordered row of boxes
 struct Test2 : Test
 {
 	const char* GetCategory() const
@@ -23,25 +24,17 @@ struct Test2 : Test
 		return "Ordered Row";
 	}
 
-	void Create(dtTreeHeuristic heuristic, bool rotate) override
+	void CreateBoxes() override
 	{
 		Allocate(10);
 
-		m_tree.m_heuristic = heuristic;
 		float x = 0.0f;
 		for (int i = 0; i < 10; ++i)
 		{
 			m_boxes[i].lowerBound = dtVecSet(x, 0.0f, 0.0f);
 			m_boxes[i].upperBound = dtVecSet(x + 1.0f, 1.0f, 1.0f);
-			m_proxies[i] = m_tree.CreateProxy(m_boxes[i], rotate);
 			x += 1.0f;
 		}
-	}
-
-	void Destroy() override
-	{
-		m_tree.Clear();
-		Free();
 	}
 };
 

@@ -14,7 +14,7 @@
 #include "draw.h"
 
 #include <stdio.h>
-#include <assert.h>
+#include <vector>
 
 struct Test3 : Test
 {
@@ -28,15 +28,16 @@ struct Test3 : Test
 		return "Overwatch Map";
 	}
 
-	bool Load(const char* fileName)
+	void CreateBoxes() override
 	{
-		m_vertices = nullptr;
-		m_vertexCount = 0;
+		const char* fileName = "data/BlizzardLandEditorTree.txt";
+
+		int vertexCount = 0;
 
 		FILE* file = fopen(fileName, "r");
 		if (file == nullptr)
 		{
-			return false;
+			return;
 		}
 
 		const int k_bufferSize = 256;
@@ -47,26 +48,31 @@ struct Test3 : Test
 			switch (buffer[0])
 			{
 			case 'v':
-				++m_vertexCount;
+				++vertexCount;
 				break;
 			}
 		}
 
 		rewind(file);
 
-		m_vertices = (dtVec*)malloc(m_vertexCount * sizeof(dtVec));
+		if (vertexCount == 0)
+		{
+			fclose(file);
+			return;
+		}
+
+		std::vector<dtVec> vertices(vertexCount);
 
 		int index = 0;
 		while (fgets(buffer, k_bufferSize, file))
 		{
-			dtVec* v = m_vertices + index;
 			float x, y, z;
 
 			switch (buffer[0])
 			{
 			case 'v':
 				sscanf(buffer, "v %f %f %f", &x, &y, &z);
-				m_vertices[index] = dtVecSet(x, y, z);
+				vertices[index] = dtVecSet(x, y, z);
 				++index;
 				break;
 			}
@@ -74,87 +80,16 @@ struct Test3 : Test
 
 		fclose(file);
 
-		return true;
-	}
+		Allocate(vertexCount / 2);
 
-	void Create(dtTreeHeuristic heuristic, bool rotate) override
-	{
-		m_tree.m_heuristic = heuristic;
-		m_rotate = rotate;
-
-		bool success = Load("data/BlizzardLandEditorTree.txt");
-		assert(success);
-
-		m_proxyCount = m_vertexCount / 2;
-		m_proxies = (int*)malloc(m_proxyCount * sizeof(int));
-
-		dtTimer timer;
-		for (int i = 0; i < m_proxyCount; ++i)
+		for (int i = 0; i < m_count; ++i)
 		{
-			dtAABB box;
-			box.lowerBound = m_vertices[2 * i + 0];
-			box.upperBound = m_vertices[2 * i + 1];
-			m_proxies[i] = m_tree.CreateProxy(box, m_rotate);
-		}
-		m_buildTime = timer.GetMilliseconds();
-
-		m_base = 0;
-	}
-
-	void Update(Draw& draw, int reinsertIter, int shuffleIter) override
-	{
-		if (m_proxyCount == 0)
-		{
-			return;
+			m_boxes[i].lowerBound = vertices[2 * i + 0];
+			m_boxes[i].upperBound = vertices[2 * i + 1];
 		}
 
-		dtTimer timer;
-		for (int i = 0; i < reinsertIter; ++i)
-		{
-			int index = m_base;
-			m_tree.DestroyProxy(m_proxies[index], m_rotate);
-
-			dtAABB box;
-			box.lowerBound = m_vertices[2 * index + 0];
-			box.upperBound = m_vertices[2 * index + 1];
-			m_proxies[index] = m_tree.CreateProxy(box, m_rotate);
-
-			m_base += 1;
-			if (m_base == m_proxyCount)
-			{
-				m_base = 0;
-			}
-		}
-
-		m_tree.Optimize(shuffleIter);
-
-		float updateTime = timer.GetMilliseconds();
-
-		draw.DrawString(5, 50, "build time = %6.2f, update time = %8.2f us", m_buildTime, 1000.0f * updateTime);
-
-		int height = m_tree.GetHeight();
-		float area = m_tree.GetAreaRatio();
-		draw.DrawString(5, 65, "current height = %d, area = %g", height, area);
+		m_count = 50;
 	}
-
-	void Destroy() override
-	{
-		m_tree.Clear();
-		free(m_vertices);
-		m_vertices = nullptr;
-		m_vertexCount = 0;
-		free(m_proxies);
-		m_proxies = nullptr;
-		m_proxyCount = 0;
-	}
-
-	int m_base;
-	float m_buildTime;
-	int* m_proxies;
-	int m_proxyCount;
-	dtVec* m_vertices;
-	int m_vertexCount;
-	bool m_rotate;
 };
 
 static Test3 s_test;

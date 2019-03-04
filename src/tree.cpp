@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <assert.h>
 
-#define DT_VALIDATE 0
+#define DT_VALIDATE 1
 
 dtTree::dtTree()
 {
@@ -48,6 +48,9 @@ dtTree::dtTree()
 	m_insertionCount = 0;
 	m_heap.reserve(128);
 	m_maxHeapCount = 0;
+
+	m_heuristic = dt_sah;
+	m_rotate = true;
 }
 
 dtTree::~dtTree()
@@ -75,6 +78,13 @@ void dtTree::Clear()
 	m_freeList = 0;
 	m_path = 0;
 	m_insertionCount = 0;
+
+	m_countBF = 0;
+	m_countBG = 0;
+	m_countCD = 0;
+	m_countCE = 0;
+
+	m_maxHeapCount = 0;
 }
 
 //
@@ -137,7 +147,7 @@ void dtTree::FreeNode(int nodeId)
 // Create a proxy in the tree as a leaf node. We return the index
 // of the node instead of a pointer so that we can grow
 // the node pool.
-int dtTree::CreateProxy(const dtAABB& aabb, bool rotate)
+int dtTree::CreateProxy(const dtAABB& aabb)
 {
 	int proxyId = AllocateNode();
 
@@ -146,7 +156,7 @@ int dtTree::CreateProxy(const dtAABB& aabb, bool rotate)
 	m_nodes[proxyId].height = 0;
 	m_nodes[proxyId].isLeaf = true;
 
-	InsertLeaf(proxyId, rotate);
+	InsertLeaf(proxyId);
 
 	++m_proxyCount;
 
@@ -154,12 +164,12 @@ int dtTree::CreateProxy(const dtAABB& aabb, bool rotate)
 }
 
 //
-void dtTree::DestroyProxy(int proxyId, bool rotate)
+void dtTree::DestroyProxy(int proxyId)
 {
 	assert(0 <= proxyId && proxyId < m_nodeCapacity);
 	assert(m_nodes[proxyId].isLeaf);
 
-	RemoveLeaf(proxyId, rotate);
+	RemoveLeaf(proxyId);
 	FreeNode(proxyId);
 
 	--m_proxyCount;
@@ -171,7 +181,7 @@ static inline bool operator < (const dtCandidateNode& a, const dtCandidateNode& 
 }
 
 // Insert using branch and bound. Push children without consideration.
-void dtTree::InsertLeafSAH1(int leaf, bool rotate)
+void dtTree::InsertLeafBittner(int leaf)
 {
 	++m_insertionCount;
 
@@ -335,7 +345,7 @@ void dtTree::InsertLeafSAH1(int leaf, bool rotate)
 		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
 		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
 
-		if (rotate)
+		if (m_rotate)
 		{
 			Rotate(index);
 		}
@@ -347,7 +357,7 @@ void dtTree::InsertLeafSAH1(int leaf, bool rotate)
 }
 
 // Insert using branch and bound. Consider children before pushing.
-void dtTree::InsertLeafSAH2(int leaf, bool rotate)
+void dtTree::InsertLeafSAH(int leaf)
 {
 	++m_insertionCount;
 
@@ -534,7 +544,7 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
 		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
 
-		if (rotate)
+		if (m_rotate)
 		{
 			Rotate(index);
 		}
@@ -545,7 +555,7 @@ void dtTree::InsertLeafSAH2(int leaf, bool rotate)
 	Validate();
 }
 
-void dtTree::InsertLeafBox2D(int leaf, bool rotate)
+void dtTree::InsertLeafBox2D(int leaf)
 {
 	++m_insertionCount;
 
@@ -679,7 +689,7 @@ void dtTree::InsertLeafBox2D(int leaf, bool rotate)
 		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
 		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
 
-		if (rotate)
+		if (m_rotate)
 		{
 			Rotate(index);
 		}
@@ -699,7 +709,7 @@ static inline float dtManhattan(const dtAABB& a, const dtAABB& b)
 }
 
 //
-void dtTree::InsertLeafManhattan(int leaf, bool rotate)
+void dtTree::InsertLeafManhattan(int leaf)
 {
 	++m_insertionCount;
 
@@ -783,7 +793,7 @@ void dtTree::InsertLeafManhattan(int leaf, bool rotate)
 		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
 		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
 
-		if (rotate)
+		if (m_rotate)
 		{
 			Rotate(index);
 		}
@@ -794,23 +804,27 @@ void dtTree::InsertLeafManhattan(int leaf, bool rotate)
 	Validate();
 }
 
-void dtTree::InsertLeaf(int leaf, bool rotate)
+void dtTree::InsertLeaf(int leaf)
 {
-	if (m_heuristic == dt_surfaceAreaHeuristic)
+	if (m_heuristic == dt_sah)
 	{
-		InsertLeafSAH2(leaf, rotate);
+		InsertLeafSAH(leaf);
 	}
-	else if (m_heuristic == dt_box2dHeuristic)
+	else if (m_heuristic == dt_bittner)
 	{
-		InsertLeafBox2D(leaf, rotate);
+		InsertLeafBittner(leaf);
+	}
+	else if (m_heuristic == dt_box2d)
+	{
+		InsertLeafBox2D(leaf);
 	}
 	else
 	{
-		InsertLeafManhattan(leaf, rotate);
+		InsertLeafManhattan(leaf);
 	}
 }
 
-void dtTree::RemoveLeaf(int leaf, bool rotate)
+void dtTree::RemoveLeaf(int leaf)
 {
 	if (leaf == m_root)
 	{
@@ -856,11 +870,6 @@ void dtTree::RemoveLeaf(int leaf, bool rotate)
 
 			m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
 			m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
-
-			if (rotate)
-			{
-				Rotate(index);
-			}
 
 			index = m_nodes[index].parent;
 		}
@@ -1630,7 +1639,7 @@ struct dtTreePlane
 
 void dtTree::BuildTopDownSAH(int* proxies, dtAABB* boxes, int count)
 {
-	assert(m_nodes == nullptr);
+	free(m_nodes);
 
 	m_nodeCapacity = 2 * count - 1;
 	m_nodes = (dtNode*)malloc(m_nodeCapacity * sizeof(dtNode));
@@ -1784,6 +1793,17 @@ int dtTree::SortBoxes(int parentIndex, dtNode* leaves, int count, dtTreeBin* bin
 	int leftCount = i1 + 1;
 	int rightCount = count - leftCount;
 
+	if (leftCount == 0)
+	{
+		leftCount = 1;
+		rightCount -= 1;
+	}
+	else if (rightCount == 0)
+	{
+		leftCount -= 1;
+		rightCount = 1;
+	}
+
 	node.child1 = SortBoxes(nodeIndex, leaves, leftCount, bins, planes);
 	node.child2 = SortBoxes(nodeIndex, leaves + leftCount, rightCount, bins, planes);
 
@@ -1791,5 +1811,8 @@ int dtTree::SortBoxes(int parentIndex, dtNode* leaves, int count, dtTreeBin* bin
 	const dtNode& child2 = m_nodes[node.child2];
 
 	node.height = 1 + dtMax(child1.height, child2.height);
+
+	Validate();
+
 	return nodeIndex;
 }

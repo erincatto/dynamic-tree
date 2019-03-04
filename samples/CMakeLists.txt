@@ -7,6 +7,7 @@ set (SAMPLE_SOURCE_FILES
 	draw.cpp
 	main.cpp
 	settings.cpp
+	test.cpp
 	test1.cpp
 	test2.cpp
 	test3.cpp

@@ -19,28 +19,20 @@ struct Test
 {
 	virtual const char* GetCategory() const = 0;
 	virtual const char* GetName() const = 0;
-	virtual void Create(dtTreeHeuristic heuristic, bool rotate) = 0;
-	virtual void Destroy() = 0;
-	virtual void Update(Draw&, int /* reinsertIter */, int /* shuffleIter */) {}
+	virtual void CreateBoxes() = 0;
+	
+	void Create(dtTreeHeuristic heuristic, bool rotate);
+	void Allocate(int count);
+	void Destroy();
+	void Update(Draw& draw, int reinsertIter, int shuffleIter);
 
-	void Allocate(int count)
-	{
-		m_boxes = (dtAABB*)malloc(count * sizeof(dtAABB));
-		m_proxies = (int*)malloc(count * sizeof(int));
-		m_count = count;
-	}
-
-	void Free()
-	{
-		free(m_boxes);
-		free(m_proxies);
-		m_boxes = nullptr;
-		m_proxies = nullptr;
-		m_count = 0;
-	}
+	void RebuildTopDown();
+	void RebuildBottomUp();
 
 	dtAABB* m_boxes;
 	int* m_proxies;
 	int m_count;
 	dtTree m_tree;
+	int m_base;
+	float m_buildTime;
 };

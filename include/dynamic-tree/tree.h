@@ -18,9 +18,10 @@
 
 enum dtTreeHeuristic
 {
-	dt_surfaceAreaHeuristic = 0,
-	dt_box2dHeuristic = 1,
-	dt_manhattanHeuristic = 2
+	dt_sah = 0,
+	dt_bittner = 1,
+	dt_box2d = 2,
+	dt_manhattan = 3
 };
 
 /// A node in the dynamic tree. The client does not interact with this directly.
@@ -69,10 +70,10 @@ struct dtTree
 	void Clear();
 
 	/// Create a proxy. Provide a tight fitting AABB and a userData pointer.
-	int CreateProxy(const dtAABB& aabb, bool rotate);
+	int CreateProxy(const dtAABB& aabb);
 
 	/// Destroy a proxy. This asserts if the id is invalid.
-	void DestroyProxy(int proxyId, bool rotate);
+	void DestroyProxy(int proxyId);
 
 	/// Get the fat AABB for a proxy.
 	const dtAABB& GetAABB(int proxyId) const;
@@ -108,12 +109,12 @@ struct dtTree
 	int AllocateNode();
 	void FreeNode(int node);
 
-	void InsertLeaf(int leaf, bool rotate);
-	void InsertLeafSAH1(int leaf, bool rotate);
-	void InsertLeafSAH2(int leaf, bool rotate);
-	void InsertLeafBox2D(int leaf, bool rotate);
-	void InsertLeafManhattan(int leaf, bool rotate);
-	void RemoveLeaf(int leaf, bool rotate);
+	void InsertLeaf(int leaf);
+	void InsertLeafSAH(int leaf);
+	void InsertLeafBittner(int leaf);
+	void InsertLeafBox2D(int leaf);
+	void InsertLeafManhattan(int leaf);
+	void RemoveLeaf(int leaf);
 
 	void Rotate(int index);
 
@@ -146,6 +147,7 @@ struct dtTree
 	int m_insertionCount;
 
 	dtTreeHeuristic m_heuristic;
+	bool m_rotate;
 	
 	std::vector<dtCandidateNode> m_heap;
 	int m_maxHeapCount;

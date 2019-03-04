@@ -12,6 +12,7 @@
 #pragma once
 
 #include <math.h>
+#include <memory.h>
 #include <immintrin.h>
 
 static const float dtPi = 3.141592654f;
@@ -344,6 +345,11 @@ inline dtVec dtCenter(const dtAABB& a)
 {
 	return dtSplat(0.5f) * (a.lowerBound + a.upperBound);
 }
+
+struct dtFree
+{
+	void operator()(void* x) { free(x); }
+};
 
 class dtTimer
 {
