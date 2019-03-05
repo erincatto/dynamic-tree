@@ -88,7 +88,7 @@ struct Test3 : Test
 			m_boxes[i].upperBound = vertices[2 * i + 1];
 		}
 
-		m_count = 50;
+		m_count = 1000;
 	}
 };
 

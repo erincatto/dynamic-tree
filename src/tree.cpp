@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <assert.h>
 
-#define DT_VALIDATE 1
+#define DT_VALIDATE 0
 
 dtTree::dtTree()
 {
@@ -223,7 +223,7 @@ void dtTree::InsertLeafBittner(int leaf)
 		float directCost = dtArea(dtUnion(node.aabb, aabbL));
 		float totalCost = inducedCost + directCost;
 
-		if (totalCost <= bestCost)
+		if (totalCost < bestCost)
 		{
 			bestCost = totalCost;
 			bestSibling = index;
@@ -236,7 +236,7 @@ void dtTree::InsertLeafBittner(int leaf)
 
 		inducedCost += directCost - dtArea(node.aabb);
 		float lowerBoundCost = inducedCost + areaL;
-		if (lowerBoundCost <= bestCost)
+		if (lowerBoundCost < bestCost)
 		{
 			dtCandidateNode candidate1;
 			candidate1.index = node.child1;
@@ -255,6 +255,8 @@ void dtTree::InsertLeafBittner(int leaf)
 	}
 
 	m_maxHeapCount = dtMax(m_maxHeapCount, int(m_heap.size()));
+
+	//printf("%d %g\n", bestSibling, bestCost);
 
 #if 0
 	// Compare with brute force
@@ -408,8 +410,6 @@ void dtTree::InsertLeafSAH(int leaf)
 
 		// Child push order doesn't matter since the heap will sort them.
 
-		const float bias = 1.0f;
-
 		{
 			const dtNode& child1 = m_nodes[node.child1];
 			float directCost = dtArea(dtUnion(child1.aabb, aabbL));
@@ -421,7 +421,7 @@ void dtTree::InsertLeafSAH(int leaf)
 			}
 
 			float inducedCost = totalCost - dtArea(child1.aabb);
-			if (inducedCost + areaL < bias * bestCost)
+			if (inducedCost + areaL < bestCost)
 			{
 				dtCandidateNode candidate1;
 				candidate1.index = node.child1;
@@ -442,7 +442,7 @@ void dtTree::InsertLeafSAH(int leaf)
 			}
 
 			float inducedCost = totalCost - dtArea(child2.aabb);
-			if (inducedCost + areaL < bias * bestCost)
+			if (inducedCost + areaL < bestCost)
 			{
 				dtCandidateNode candidate2;
 				candidate2.index = node.child2;
@@ -454,6 +454,8 @@ void dtTree::InsertLeafSAH(int leaf)
 	}
 
 	m_maxHeapCount = dtMax(m_maxHeapCount, int(m_heap.size()));
+
+	//printf("%d %g\n", bestSibling, bestCost);
 
 #if 0
 	// Compare with brute force
@@ -1641,6 +1643,7 @@ void dtTree::BuildTopDownSAH(int* proxies, dtAABB* boxes, int count)
 {
 	free(m_nodes);
 
+	m_freeList = dt_nullNode;
 	m_nodeCapacity = 2 * count - 1;
 	m_nodes = (dtNode*)malloc(m_nodeCapacity * sizeof(dtNode));
 	memset(m_nodes, 0, m_nodeCapacity * sizeof(dtNode));
@@ -1649,6 +1652,7 @@ void dtTree::BuildTopDownSAH(int* proxies, dtAABB* boxes, int count)
 	for (int i = 0; i < count; ++i)
 	{
 		m_nodes[i].aabb = boxes[i];
+		// Use child1 to store the proxy index
 		m_nodes[i].child1 = i;
 		m_nodes[i].child2 = dt_nullNode;
 		m_nodes[i].height = 0;
@@ -1665,11 +1669,12 @@ void dtTree::BuildTopDownSAH(int* proxies, dtAABB* boxes, int count)
 
 	for (int i = 0; i < m_nodeCount; ++i)
 	{
-		const dtNode& n = m_nodes[i];
+		dtNode& n = m_nodes[i];
 		if (n.isLeaf)
 		{
 			assert(0 <= n.child1 && n.child1 < count);
 			proxies[n.child1] = i;
+			n.child1 = dt_nullNode;
 		}
 	}
 
@@ -1681,7 +1686,8 @@ int dtTree::SortBoxes(int parentIndex, dtNode* leaves, int count, dtTreeBin* bin
 {
 	if (count == 1)
 	{
-		return leaves[0].child1;
+		leaves[0].parent = parentIndex;
+		return int(leaves - m_nodes);
 	}
 
 	dtVec center = dtCenter(leaves[0].aabb);
@@ -1811,8 +1817,6 @@ int dtTree::SortBoxes(int parentIndex, dtNode* leaves, int count, dtTreeBin* bin
 	const dtNode& child2 = m_nodes[node.child2];
 
 	node.height = 1 + dtMax(child1.height, child2.height);
-
-	Validate();
 
 	return nodeIndex;
 }
