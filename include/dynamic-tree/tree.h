@@ -102,7 +102,11 @@ struct dtTree
 
 	/// Build top down using SAH
 	void BuildTopDownSAH(int* proxies, dtAABB* aabbs, int count);
-	int SortBoxes(int parentIndex, dtNode* leaves, int count, struct dtTreeBin* bins, struct dtTreePlane* planes);
+	int BinSortBoxes(int parentIndex, dtNode* leaves, int count, struct dtTreeBin* bins, struct dtTreePlane* planes);
+
+	/// Build top down using the median split
+	void BuildTopDownMedianSplit(int* proxies, dtAABB* aabbs, int count);
+	int PartitionBoxes(int parentIndex, dtNode* leaves, int count);
 
 	void WriteDot(const char* fileName) const;
 

@@ -284,9 +284,16 @@ static void DrawUI()
 				g_treeArea = g_test->m_tree.GetAreaRatio();
 			}
 
-			if (ImGui::Button("Top Down"))
+			if (ImGui::Button("Top Down SAH"))
 			{
-				g_test->RebuildTopDown();
+				g_test->RebuildTopDownSAH();
+				g_treeHeight = g_test->m_tree.GetHeight();
+				g_treeArea = g_test->m_tree.GetAreaRatio();
+			}
+
+			if (ImGui::Button("Top Down Median"))
+			{
+				g_test->RebuildTopDownMedian();
 				g_treeHeight = g_test->m_tree.GetHeight();
 				g_treeArea = g_test->m_tree.GetAreaRatio();
 			}

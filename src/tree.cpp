@@ -347,11 +347,6 @@ void dtTree::InsertLeafBittner(int leaf)
 		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
 		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
 
-		if (m_rotate)
-		{
-			Rotate(index);
-		}
-
 		index = m_nodes[index].parent;
 	}
 
@@ -794,11 +789,6 @@ void dtTree::InsertLeafManhattan(int leaf)
 
 		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
 		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
-
-		if (m_rotate)
-		{
-			Rotate(index);
-		}
 
 		index = m_nodes[index].parent;
 	}
@@ -1663,7 +1653,7 @@ void dtTree::BuildTopDownSAH(int* proxies, dtAABB* boxes, int count)
 
 	dtTreeBin bins[dt_binCount];
 	dtTreePlane planes[dt_binCount - 1];
-	m_root = SortBoxes(dt_nullNode, m_nodes, count, bins, planes);
+	m_root = BinSortBoxes(dt_nullNode, m_nodes, count, bins, planes);
 
 	assert(m_nodeCount == m_nodeCapacity);
 
@@ -1682,7 +1672,7 @@ void dtTree::BuildTopDownSAH(int* proxies, dtAABB* boxes, int count)
 }
 
 // "On Fast Construction of SAH-based Bounding Volume Hierarchies" by Ingo Wald
-int dtTree::SortBoxes(int parentIndex, dtNode* leaves, int count, dtTreeBin* bins, dtTreePlane* planes)
+int dtTree::BinSortBoxes(int parentIndex, dtNode* leaves, int count, dtTreeBin* bins, dtTreePlane* planes)
 {
 	if (count == 1)
 	{
@@ -1810,8 +1800,136 @@ int dtTree::SortBoxes(int parentIndex, dtNode* leaves, int count, dtTreeBin* bin
 		rightCount = 1;
 	}
 
-	node.child1 = SortBoxes(nodeIndex, leaves, leftCount, bins, planes);
-	node.child2 = SortBoxes(nodeIndex, leaves + leftCount, rightCount, bins, planes);
+	node.child1 = BinSortBoxes(nodeIndex, leaves, leftCount, bins, planes);
+	node.child2 = BinSortBoxes(nodeIndex, leaves + leftCount, rightCount, bins, planes);
+
+	const dtNode& child1 = m_nodes[node.child1];
+	const dtNode& child2 = m_nodes[node.child2];
+
+	node.height = 1 + dtMax(child1.height, child2.height);
+
+	return nodeIndex;
+}
+
+void dtTree::BuildTopDownMedianSplit(int* proxies, dtAABB* boxes, int count)
+{
+	free(m_nodes);
+
+	m_freeList = dt_nullNode;
+	m_nodeCapacity = 2 * count - 1;
+	m_nodes = (dtNode*)malloc(m_nodeCapacity * sizeof(dtNode));
+	memset(m_nodes, 0, m_nodeCapacity * sizeof(dtNode));
+
+	m_nodeCount = count;
+	for (int i = 0; i < count; ++i)
+	{
+		m_nodes[i].aabb = boxes[i];
+		// Use child1 to store the proxy index
+		m_nodes[i].child1 = i;
+		m_nodes[i].child2 = dt_nullNode;
+		m_nodes[i].height = 0;
+		m_nodes[i].isLeaf = true;
+		m_nodes[i].next = -1;
+		m_nodes[i].parent = dt_nullNode;
+	}
+
+	m_root = PartitionBoxes(dt_nullNode, m_nodes, count);
+
+	assert(m_nodeCount == m_nodeCapacity);
+
+	for (int i = 0; i < m_nodeCount; ++i)
+	{
+		dtNode& n = m_nodes[i];
+		if (n.isLeaf)
+		{
+			assert(0 <= n.child1 && n.child1 < count);
+			proxies[n.child1] = i;
+			n.child1 = dt_nullNode;
+		}
+	}
+
+	Validate();
+}
+
+int dtTree::PartitionBoxes(int parentIndex, dtNode* leaves, int count)
+{
+	if (count == 1)
+	{
+		leaves[0].parent = parentIndex;
+		return int(leaves - m_nodes);
+	}
+
+	dtVec mean = dtCenter(leaves[0].aabb);
+	dtAABB aabb = leaves[0].aabb;
+	for (int i = 1; i < count; ++i)
+	{
+		aabb = dtUnion(aabb, leaves[i].aabb);
+		mean += dtCenter(leaves[i].aabb);
+	}
+
+	mean = dtSplat(1.0f / count) * mean;
+
+	dtVec variance = dtVec_Zero;
+	for (int i = 0; i < count; ++i)
+	{
+		dtVec diff = dtCenter(leaves[i].aabb) - mean;
+		variance = variance + diff * diff;
+	}
+
+	dtVec c = dtCenter(aabb);
+	float ca;
+	int axisIndex;
+	if (dtGetX(variance) > dtGetY(variance) && dtGetX(variance) > dtGetZ(variance))
+	{
+		ca = dtGetX(c);
+		axisIndex = 0;
+	}
+	else if (dtGetY(variance) > dtGetZ(variance))
+	{
+		ca = dtGetY(c);
+		axisIndex = 1;
+	}
+	else
+	{
+		ca = dtGetZ(c);
+		axisIndex = 2;
+	}
+
+	assert(m_nodeCount < m_nodeCapacity);
+	int nodeIndex = m_nodeCount++;
+	dtNode& node = m_nodes[nodeIndex];
+	node.aabb = aabb;
+	node.parent = parentIndex;
+	node.isLeaf = false;
+
+	int i1 = -1;
+	for (int i2 = 0; i2 < count; ++i2)
+	{
+		dtVec leafCenter = dtCenter(leaves[i2].aabb);
+		float value = dtGet(leafCenter, axisIndex);
+		if (value <= ca)
+		{
+			++i1;
+			dtSwap(leaves[i1], leaves[i2]);
+		}
+	}
+
+	int leftCount = i1 + 1;
+	int rightCount = count - leftCount;
+
+	if (leftCount == 0)
+	{
+		leftCount = 1;
+		rightCount -= 1;
+	}
+	else if (rightCount == 0)
+	{
+		leftCount -= 1;
+		rightCount = 1;
+	}
+
+	node.child1 = PartitionBoxes(nodeIndex, leaves, leftCount);
+	node.child2 = PartitionBoxes(nodeIndex, leaves + leftCount, rightCount);
 
 	const dtNode& child1 = m_nodes[node.child1];
 	const dtNode& child2 = m_nodes[node.child2];

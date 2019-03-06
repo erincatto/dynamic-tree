@@ -26,7 +26,8 @@ struct Test
 	void Destroy();
 	void Update(Draw& draw, int reinsertIter, int shuffleIter);
 
-	void RebuildTopDown();
+	void RebuildTopDownSAH();
+	void RebuildTopDownMedian();
 	void RebuildBottomUp();
 
 	dtAABB* m_boxes;

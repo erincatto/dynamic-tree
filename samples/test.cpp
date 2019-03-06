@@ -83,12 +83,23 @@ void Test::Allocate(int count)
 	m_count = count;
 }
 
-void Test::RebuildTopDown()
+void Test::RebuildTopDownSAH()
 {
 	m_tree.Clear();
 
 	dtTimer timer;
 	m_tree.BuildTopDownSAH(m_proxies, m_boxes, m_count);
+	m_buildTime = timer.GetMilliseconds();
+
+	m_base = 0;
+}
+
+void Test::RebuildTopDownMedian()
+{
+	m_tree.Clear();
+
+	dtTimer timer;
+	m_tree.BuildTopDownMedianSplit(m_proxies, m_boxes, m_count);
 	m_buildTime = timer.GetMilliseconds();
 
 	m_base = 0;
