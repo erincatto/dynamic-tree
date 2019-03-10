@@ -147,13 +147,14 @@ void dtTree::FreeNode(int nodeId)
 // Create a proxy in the tree as a leaf node. We return the index
 // of the node instead of a pointer so that we can grow
 // the node pool.
-int dtTree::CreateProxy(const dtAABB& aabb)
+int dtTree::CreateProxy(const dtAABB& aabb, int objectIndex)
 {
 	int proxyId = AllocateNode();
 
 	m_nodes[proxyId].aabb.lowerBound = aabb.lowerBound;
 	m_nodes[proxyId].aabb.upperBound = aabb.upperBound;
 	m_nodes[proxyId].height = 0;
+	m_nodes[proxyId].objectIndex = objectIndex;
 	m_nodes[proxyId].isLeaf = true;
 
 	InsertLeaf(proxyId);
@@ -213,7 +214,7 @@ void dtTree::InsertLeafBittner(int leaf)
 
 		int index = candidate.index;
 		float inducedCost = candidate.inducedCost;
-		if (inducedCost + areaL >= bestCost)
+		if (inducedCost + areaL > bestCost)
 		{
 			// Optimum found
 			break;
@@ -223,7 +224,7 @@ void dtTree::InsertLeafBittner(int leaf)
 		float directCost = dtArea(dtUnion(node.aabb, aabbL));
 		float totalCost = inducedCost + directCost;
 
-		if (totalCost < bestCost)
+		if (totalCost <= bestCost)
 		{
 			bestCost = totalCost;
 			bestSibling = index;
@@ -236,7 +237,7 @@ void dtTree::InsertLeafBittner(int leaf)
 
 		inducedCost += directCost - dtArea(node.aabb);
 		float lowerBoundCost = inducedCost + areaL;
-		if (lowerBoundCost < bestCost)
+		if (lowerBoundCost <= bestCost)
 		{
 			dtCandidateNode candidate1;
 			candidate1.index = node.child1;
@@ -391,7 +392,7 @@ void dtTree::InsertLeafSAH(int leaf)
 
 		int index = candidate.index;
 		float lowerBoundCost = candidate.inducedCost + areaL;
-		if (lowerBoundCost >= bestCost)
+		if (lowerBoundCost > bestCost)
 		{
 			// Optimum found
 			break;
@@ -409,14 +410,14 @@ void dtTree::InsertLeafSAH(int leaf)
 			const dtNode& child1 = m_nodes[node.child1];
 			float directCost = dtArea(dtUnion(child1.aabb, aabbL));
 			float totalCost = directCost + candidate.inducedCost;
-			if (totalCost < bestCost)
+			if (totalCost <= bestCost)
 			{
 				bestCost = totalCost;
 				bestSibling = node.child1;
 			}
 
 			float inducedCost = totalCost - dtArea(child1.aabb);
-			if (inducedCost + areaL < bestCost)
+			if (inducedCost + areaL <= bestCost)
 			{
 				dtCandidateNode candidate1;
 				candidate1.index = node.child1;
@@ -430,14 +431,14 @@ void dtTree::InsertLeafSAH(int leaf)
 			const dtNode& child2 = m_nodes[node.child2];
 			float directCost = dtArea(dtUnion(child2.aabb, aabbL));
 			float totalCost = directCost + candidate.inducedCost;
-			if (totalCost < bestCost)
+			if (totalCost <= bestCost)
 			{
 				bestCost = totalCost;
 				bestSibling = node.child2;
 			}
 
 			float inducedCost = totalCost - dtArea(child2.aabb);
-			if (inducedCost + areaL < bestCost)
+			if (inducedCost + areaL <= bestCost)
 			{
 				dtCandidateNode candidate2;
 				candidate2.index = node.child2;
@@ -529,7 +530,7 @@ void dtTree::InsertLeafSAH(int leaf)
 	}
 
 	// Stage 3: walk back up the tree fixing heights and AABBs
-	int index = m_nodes[leaf].parent;
+	int index = oldParent;
 	while (index != dt_nullNode)
 	{
 		int child1 = m_nodes[index].child1;
@@ -1522,7 +1523,7 @@ void dtTree::WriteDot(const char* fileName) const
 
 	float areaRatio = GetAreaRatio();
 
-	if (m_nodeCapacity > 50)
+	if (m_proxyCount < 26)
 	{
 		fprintf(file, "graph\n");
 		fprintf(file, "{\n");
@@ -1536,11 +1537,11 @@ void dtTree::WriteDot(const char* fileName) const
 
 			if (m_nodes[i].isLeaf)
 			{
-				fprintf(file, "%d [shape=box, width=0.05, height=0.05, label=\"\"]\n", i);
+				fprintf(file, "%d [shape=box, width=0.25, height=0.25, label=\"%c\"]\n", i, 'A' + m_nodes[i].objectIndex);
 			}
 			else
 			{
-				fprintf(file, "%d [shape=point]\n", i);
+				fprintf(file, "%d [shape=circle, width=0.25, height=0.25, label=\"\"]\n", i);
 			}
 		}
 
@@ -1560,14 +1561,13 @@ void dtTree::WriteDot(const char* fileName) const
 			fprintf(file, "%d -- %d\n", i, m_nodes[i].child2);
 		}
 
-		fprintf(file, "%d [shape=box, label=\"area ratio = %.2f\"]\n", m_nodeCapacity, areaRatio);
+		fprintf(file, "%d [shape=box, fontsize=10, label=\"area ratio = %.2f\"]\n", m_nodeCapacity, areaRatio);
 		fprintf(file, "}\n");
 	}
 	else
 	{
 		fprintf(file, "graph\n");
 		fprintf(file, "{\n");
-		float totalArea = 0.0f;
 		for (int i = 0; i < m_nodeCapacity; ++i)
 		{
 			if (m_nodes[i].height == -1)
@@ -1583,10 +1583,6 @@ void dtTree::WriteDot(const char* fileName) const
 			{
 				float area = dtArea(m_nodes[i].aabb);
 				fprintf(file, "%d [shape=circle, label=\"%.f\"]\n", i, area);
-				if (i != m_root)
-				{
-					totalArea += area;
-				}
 			}
 		}
 
@@ -1606,7 +1602,7 @@ void dtTree::WriteDot(const char* fileName) const
 			fprintf(file, "%d -- %d\n", i, m_nodes[i].child2);
 		}
 
-		fprintf(file, "%d [shape=box, label=\"inner area = %.f\"]\n", m_nodeCapacity, totalArea);
+		fprintf(file, "%d [shape=box, fontsize=10, label=\"area ratio = %.f\"]\n", m_nodeCapacity, areaRatio);
 		fprintf(file, "}\n");
 	}
 

@@ -145,362 +145,65 @@ The branch and bound algorithm starts by computing the cost of root node:
 This is set as the best cost, \[C_{best} = C_{root} \] and as the best sibling, \[S_{best} = root\]. The root node is pushed onto the priority queue along with the inherited cost of the root node, which is $0$.
 
 \begin{algorithm}
-\caption{Find best sibling for $L$}
-\label{alg:best_sibling}
-\begin{algorithmic}
-\STATE $S_{best} = root$;
-\STATE $C_{best} = SA(L \cup root)$
-\STATE push($Q$, [$root$, $\Delta SA(root)$])
-\WHILE{$Q$ is not empty}
-\STATE [$S$, $C_I$] = pop($Q$)
-\STATE $C_{lower} = C_I + SA(L)$
-\IF{$C_{lower} >= C_{best}$}
-\RETURN $S_{best}$
-\ENDIF
-\FORALL{children $k$ of $S$}
-\STATE $C_k = SA(S_k \cup L) + C_I$
-\IF{$C_k < C_{best}$}
-\STATE $C_{best} = C_k$
-\STATE $S_{best} = S_k$
-\ENDIF
-\STATE $C_I = C_k - SA(S_k)$
-\IF{$C_I + SA(L) < C_{best}$}
-\STATE push($Q$, [$S_k$, $C_I$])
-\ENDIF
-\ENDFOR
-\ENDWHILE
-\RETURN $S_{best}$
-\end{algorithmic}
+	\caption{Find best sibling for $L$}
+	\label{alg:best_sibling}
+	\begin{algorithmic}
+		\STATE $S_{best} = root$;
+		\STATE $C_{best} = SA(L \cup root)$
+		\STATE push($Q$, [$root$, $\Delta SA(root)$])
+		\WHILE{$Q$ is not empty}
+		\STATE [$S$, $C_I$] = pop($Q$)
+		\STATE $C_{lower} = C_I + SA(L)$
+		\IF{$C_{lower} >= C_{best}$}
+		\RETURN $S_{best}$
+		\ENDIF
+		\FORALL{children $k$ of $S$}
+		\STATE $C_k = SA(S_k \cup L) + C_I$
+		\IF{$C_k < C_{best}$}
+		\STATE $C_{best} = C_k$
+		\STATE $S_{best} = S_k$
+		\ENDIF
+		\STATE $C_I = C_k - SA(S_k)$
+		\IF{$C_I + SA(L) < C_{best}$}
+		\STATE push($Q$, [$S_k$, $C_I$])
+		\ENDIF
+		\ENDFOR
+		\ENDWHILE
+	\RETURN $S_{best}$
+	\end{algorithmic}
 \end{algorithm}
 
-\begin{lstlisting}[caption={Branch and bound sibling search}, label={lst:branch_and_bound}, float]
-$S_{best} = root$;
-$C_{best} = SA(L \cup root)$;
-$Q.Push([rootIndex, 0])$;
-while ($Q$ is not em) == false)
-	{
-		[int index, float inherited_cost] = Q.Pop();
-		float lowerBoundCost = Area(L) + inherited_cost;
-		if (lowerBoundCost >= bestCost)
-		{
-			break;
-		}
-	}
-}	
-\end{lstlisting}
 \section{Object Movement}
 
+Game objects often need to be created and destroyed at run time due to game logic. Also simulated and animated objects need to move. There are several techniques for adapting a BVH to movement.
+\begin{enumerate}
+	\item Refit ancestors
+	\item Rebuild subtrees
+	\item Leaf re-insertion
+\end{enumerate}
+Refitting ancestors is typically a quick $O(log N)$ operation. However, if an object moves a long distance the quality of the tree can degrade. Rebuilding sub-trees~\cite{Larsson2006} has up to $O( N log N )$ cost depending on the location of the root. For a high frame rate game, this is likely too expensive. Leaf re-insertion usually has $O(log N)$ cost and can improve the quality of the tree. Additionally it uses the same algorithms needed to handle object creation and destruction.
+
+The frequency of leaf re-insertion can be reduced in many game. Often objects do not move far per frame in a game, especially if the frame rate is over 30 Hertz. Using this notion of \emph{temporal coherance} we can enlarge the bounding box used in the tree for moving objects. Each time an object moves, the code checks to see if the object's tight fitting bounding box is fully contained in the enlarged bounding box. If the tight bounding box is fully contained then leaf re-insertion is not needed. This can greatly reduce the number of leaf re-insertions on average.
+
+Here are some heuristics for bounding box enlargement.
+\begin{enumerate}
+	\item Fixed increase
+	\item Relative increase
+	\item Predictive increase
+\end{enumerate}
+The fixed increase simply adds a fixed offset to the AABB extents in all dimensions. The relative increase uses an extend offset that scales with the object size. A predictive increase uses the object's velocity to enlarge the AABB in the direction of movement. All of these heuristics can be combined.
+The best choice can depend on the type of game and the object movement patterns. It is worth mentioning that predictive increase can be risky because it may leaf an excessively large AABB in the tree even after the object starts moving. It may make sense to re-insert the object when it comes to rest using a smaller AABB.
+
 \section{Sorted Input}
+Goldsmith~\cite{Goldsmith1987} noted that sorted input is problematic in tree construction. In games sorted input is often unavoidable. Voxel style worlds in 3D and tile-base worlds in 2D are easy examples. Procedurally generated game worlds are likely to have objects that are sorted. Even when game worlds are manually created, object duplication may result in areas that are at least locally sorted and uniform.
 
-\section{Tree Rotations}
-
-\section{Results}
-
-\section{Conclusion}
-
-
-\section{AABB Trees}
-Figure~\ref{fig:loose} shows several geometric objects that may exist in a game world. Gameplay code may wish to query this world to make decisions. Queries are usually ray casts and overlap tests. For example in a shooting game a ray cast can represent the projectile. Area effects may use an overlap test to determine what objects are present in a region of space, typically an AABB or spherical region.
-
-\begin{figure}
-	\begin{center}
-		\includesvg[width=0.6\textwidth]{images/LooseObjects}
-	\end{center}
-	\caption{Objects in a game world}
-	\label{fig:loose}
-\end{figure}
-
-\begin{figure}
-	\begin{center}
-		\includesvg[width=0.6\textwidth]{images/LooseRayCast}
-	\end{center}
-	\caption{Ray-cast against game world}
-	\label{fig:raycast}
-\end{figure}
-
-\begin{lstlisting}[caption={Brute-force ray-casting}, label={lst:brute_ray}, float]
-bool BruteForceRayCast(Vec3 rayStart, Vec3 rayEnd)
-{
-	for (int i = 0; i < objectCount; ++i)
-	{
-		bool hit = objects[i].RayCast(rayStart, rayEnd);
-		if (hit)
-		{
-			return true;
-		}
-	}
-	return false
-}
-\end{lstlisting}
-
-\begin{figure}
-	\begin{center}
-		\includesvg[width=0.6\textwidth]{images/LooseOverlap}
-	\end{center}
-	\caption{Overlap test in game world}
-	\label{fig:overlap}
-\end{figure}
-
-\begin{lstlisting}[caption={Brute-force overlap test}, label={lst:brute_overlap}, float]
-Vector<int> BruteForceOverlapTest(AABB queryAABB)
-{
-	Vector<int> results;
-	for (int i = 0; i < objectCount; ++i)
-	{
-		bool overlap = objects[i].OverlapTest(queryAABB);
-		if (overlap)
-		{
-			results.PushBack(i);
-		}
-	}
-	return results;
-}
-\end{lstlisting}
-
-Brute-force testing becomes slow in large worlds. Ray-cast and overlap queries can be made faster by organizing the geometric objects into a bounding volume hierarchy (BVH). A BVH groups objects that are spatially close inside an encasing geometric object (bounding volume). This is setup recursively so that BVH groups are also grouped together until at the root of the tree there is a single bounding volume that encases all objects.
-
-AABB trees are a popular BVH due to their simplicity and effectiveness. Each node of the tree has an associated AABB that encases the child nodes. A node can be an internal node or a leaf node. The leaf nodes contain a reference to the geometric objects. Listing~\ref{lst:node} shows a basic tree node. It has the AABB, a flag to indicate if it is a leaf node, a pointer to the geometric object (when it is a leaf node), indices of the child nodes and parent node. The geometric object pointer is null when isLeaf is false. The child indices are -1 when the node is a leaf. The parent index is -1 when the node is the root node of the tree.
-\begin{lstlisting}[caption={AABB tree node}, label={lst:node}, float]
-struct AABBNode
-{
-	AABB aabb;
-	bool isLeaf;
-	int objectIndex;
-	int child1;
-	int child2;
-	int parent;
-}
-\end{lstlisting}
-
-The AABB tree can be represented as an array of nodes. The convention is that the first node in the array is the root. The indices in the nodes refer to other nodes in the node array.
-
-\begin{lstlisting}[caption={AABB tree}, label={lst:tree}, float]
-struct AABBTree
-{
-	AABBNode* nodes;
-	int count;
-}
-\end{lstlisting}
-
-Figure~\ref{fig:overlay} shows an AABB tree overlayed onto the game world. The colored dashed boxes represent internal nodes in the tree. Different colors represent different levels in the tree. Figure~\ref{fig:example_tree} shows the associated binary tree. Each leaf node is square and represents the geometric objects in the game world. Unlike a binary search tree, the order of the leaf nodes is not vital.
-\begin{figure}
-	\begin{center}
-		\includesvg[pretex=\large, width=0.6\textwidth]{images/TreeOverlay}
-	\end{center}
-	\caption{AABB tree overlayed onto game world}
-	\label{fig:overlay}
-\end{figure}
-
-
-
-The structural requirements for an AABB are as follows:
-\begin{itemize}
-	\item Every internal node has exactly two children
-	\item Every leaf node has no children
-	\item Every internal node has an AABB that is the union of the child AABBs
-\end{itemize}
-
-A ray-cast and overlap algorithms are built using this structure. Standard tree traveral techniques are used and a stack data structure is used instead of functional recursion. Listings~\ref{lst:tree_ray} and \ref{lst:tree_overlap} give basic examples of tree traversal. They both use a stack data structure and rely on external functions for object level ray-casts and overlap tests. Some refinements are left out, such as ray clipping, AABB tests, and detailed results.
-
-\begin{lstlisting}[caption={Tree ray-cast}, label={lst:tree_ray}, float]
-bool TreeRayCast(Vec3 rayStart, Vec3 rayEnd)
-{
-	Stack<int> s;
-	s.Push(0);
-	while (stack.IsEmpty() == false)
-	{
-		int index = s.Pop();
-		if (nodes[index].AABB.Overlap(rayStart, rayEnd) == false)
-		{
-			continue;
-		}
-
-		if (nodes[index].isLeaf)
-		{
-			int objectIndex = nodes[index].objectIndex;
-			if (objects[objectIndex].RayCast(rayStart, rayEnd))
-			{
-				return true;
-			}
-		}
-		else
-		{
-			s.Push(nodes[index].child1);
-			s.Push(nodes[index].child2);
-		}
-	}
-
-	return false;
-}
-\end{lstlisting}
-
-\begin{lstlisting}[caption={Tree overlap test}, label={lst:tree_overlap}, float]
-Vector<int> TreeOverlapTest(AABB queryAABB)
-{
-	Vector<int> results;
-	Stack<int> s;
-	s.Push(0);
-	while (stack.IsEmpty() == false)
-	{
-		int index = s.Pop();
-		int objectIndex = nodes[index].objectIndex;
-		if (objects[objectIndex].OverlapTest(queryAABB) == false)
-		{
-			continue;
-		}
-
-		if (nodes[index].isLeaf)
-		{
-			results.PushBack(objectIndex);
-		}
-		else
-		{
-			s.Push(nodes[index].child1);
-			s.Push(nodes[index].child2);
-		}
-	}
-
-	return false;
-}
-\end{lstlisting}
-
-\section{Surface Area Heuristic}
-The AABB tree shown in Figures~\ref{fig:overlay} and \ref{fig:example_tree} is just one possible tree out of many. This gives rise to a couple questions:
-\begin{enumerate}
-	\item What is the optimal tree?
-	\item How can an optimal tree be generated automatically?
-\end{enumerate}
-The number of possible binary trees is non-polynomial, so an exhaustive search is impractical. The it is not likely that we can find the optimal binary tree. Also, optimality is not well defined. We could pursue a balanced tree, but it is not clear if that will improve performance.
-
-In games we typically want ray-casts to be fast as possible and overlap queries should be reasonably fast. Of course we also have performance requirements that limit how much computational resources we can dedicate towards finding the best tree. Hence we need a heuristic to guide is towards a \emph{good} tree with a reasonable amount of computational resources.
-
-A intuitive way to look at the problem is to consider the probability that a ray will hit an object. Goldsmith and Salmon determined that the surface area is a reliable measure of the probability and a general ray will hit an object. This is often called the \emph{surface area heuristic} (SAH).
-
-Consider a set of $N$ identical geometric objects enclosed an AABB. The cost to perform a ray cast against this arrangement is proportional to $N$ times the area of the AABB:
-\[ C = N \cdot Area \]
-Suppose the objects are partitioned into two AABBs, then the cost is roughly:
-\[ C_{split} = N_{left} \cdot Area_{left} + N_{right} \cdot Area_{right} \]
-Then the split is worthwhile if $C < C_{split}$.
-
-Using this rule we can assemble an AABB tree automatically using recursion. Consider the example tree of Figure~\ref{fig:example_tree}. Since each leaf contains one object, the cost of the tree is the sum of all the AABB areas:
-\[ C_t = \sum_{i=1}^{10} Area_i + \sum_{i=A}^K Area_i\]
-Node 1 has the same area for any tree because the node 1 AABB is always the union of all the leaf AABBs:
-\[ AABB_{root} = \bigcup_{i=A}^K AABB_i \]
-Similarly the sum of the leaf AABB areas does not change for different trees. Therefore we can compare the cost of two trees by comparing the total surface area of the interior nodes, minus the root:
-\[ C_i = \sum_{i=2}^{10} Area_i \]
-A nondimensional metric for tree cost can be written as the ratio of the total interior node area divided by the area of the root node:
-\[ C_{ratio} = \frac{C_i}{Area_{root}} \]
-
-\section{Dynamic AABB Tree}
-A dynamic AABB tree is built incrementally as objects enter and leave the world. As such, the core maintenance operations are the InsertLeaf and RemoveLeaf functions. These functions also handle object movement, when an object moves it is removed from the tree then re-inserted.
-
-The function for insertion is broken into three stages:
-\begin{enumerate}
-	\item Descend tree from root. Looking for the lowest cost insertion point.
-	\item Connect new leaf node to tree. This requires allocation of a new internal node.
-	\item Ascend the tree and adjust the parent AABBs and heights.
-\end{enumerate}
-
-Figures~\ref{fig:tree_insert1}, \ref{fig:tree_insert2}, and \ref{fig:tree_insert3} show a typical tree insertion operation. The tree is descended in stage 1, looking for an optimal position for the new leaf $Q$. A new parent node $11$ is created for $Q$ and $H$ in stage 2. Finally the tree is ascended to the root in stage 3 to refit the AABBs and update the heights. It is possible to refit the AABBs in stage 1, however the heights cannot be updated.
-
-\begin{figure}
-	\begin{center}
-		\includesvg[pretex=\large, width=\textwidth]{images/TreeInsert1}
-	\end{center}
-	\caption{Recursive descent into tree looking for insertion point for new leaf $Q$}
-	\label{fig:tree_insert1}
-\end{figure}
-
-
-
-
-\begin{figure}
-	\begin{center}
-		\includesvg[pretex=\large, width=\textwidth]{images/TreeInsert3}
-	\end{center}
-	\caption{Ascend the tree and adjust the parent AABBs and heights}
-	\label{fig:tree_insert3}
-\end{figure}
-
-\begin{figure}
-	\begin{center}
-		\includesvg[pretex=\Large]{images/NewLeaf}
-	\end{center}
-	\caption{Insertion of new leaf node into a sub-tree}
-	\label{fig:new_leaf}
-\end{figure}
-
-Stage 1 is the most interesting stage because it involves the application of the SAH. At each stage of the tree we examine the current node $P$. Figure~\ref{fig:new_leaf} shows a subtree with parent $P$ and children $1$ and $2$. The goal is to insert the new leaf node $Q$ into the tree.
-
-If node $P$ is a leaf node then we must create a new parent node $G$ and attach $P$ and $Q$ as siblings. This scenario is shown in Figure~\ref{fig:single_leaf}.
-
-\begin{figure}
-	\begin{center}
-		\includesvg[pretex=\Large]{images/SingleLeaf}
-	\end{center}
-	\caption{Node $P$ is a leaf node}
-	\label{fig:single_leaf}
-\end{figure}
-
-Otherwise the current node is an internal node and there are three possible choices:
-\begin{enumerate}
-	\item Create a new parent for the current internal node and the new leaf node.
-	\item Recurse into the child 1 node.
-	\item Recurse into the child 2 node.
-\end{enumerate}
-The algorithm chooses between the three possibilities by comparing the relative cost. The idea is pick the alternative that leads to the smallest increase of surface area of the internal nodes of the tree. The cost of increasing the surface area of nodes higher in the tree is the same regardless of the choice. So we only need to consider the increased area of the current subtree and below.
-
-The cost for creating a new parent for the current internal node is the area of the new parent node $G$ as shown in Figure~\ref{fig:single_leaf}. The AABB for node $G$ is the union of the AABBs for $P$ and $Q$.
-\[AABB_G = AABB_P \cup AABB_Q \]
-And the cost is the area of $AABB_G$ and is refered to as the base cost $C_b$:
-\[ C_b = A_G \]
-
-\begin{figure}
-	\begin{center}
-		\includesvg[pretex=\Large]{images/NewGrandParent}
-	\end{center}
-	\caption{New grand parent}
-	\label{fig:grand_parent}
-\end{figure}
-
-The cost for decending into child 1 depends on whether child 1 is an internal or leaf node. If child 1 is a leaf, then a new internal node $X$ is added to be the parent of the $1$ and $Q$. In this case the internal node $P$ might increase in size. So the cost is:
-\[ C_1 = \Delta A_P + A_X \]
-
-If child 1 is an internal node, things get a bit fuzzier. We know that $P$ and $1$ might increase in size. We also know that at some point a new node $Y$ will need to be created and that it has an area at least equal to the area of $Q$. The minimum cost for descending is:
-\[ C_1 = \Delta A_P + \Delta A_1 + A_Q \]
-This cost function has shown to work well in practice, however there may be improvements.
-
-The cost function $C_2$ for descending into child 2 is similar, so the details are omitted.
-
-Descent at each node is determined selecting by comparing $C_b$, $C_1$, and $C_2$. Once the insertion point is found, the algorithm creates a new internal node and connects the new leaf $Q$ and its sibling. In stage 3 the tree is ascended and the bounding boxes are refitted. The node heights are also updated.
-
-\begin{figure}
-	\begin{center}
-		\includesvg[pretex=\Large]{images/Child1Leaf}
-	\end{center}
-	\caption{Child 1 is a leaf node}
-	\label{fig:child1_leaf}
-\end{figure}
-
-\begin{figure}
-	\begin{center}
-		\includesvg[pretex=\Large]{images/Child1Internal}
-	\end{center}
-	\caption{Child 1 is an internal node}
-	\label{fig:child1_internal}
-\end{figure}
-
-Removing a leaf node is simpler. There is the necessary tree data structure update. Once the leaf is removed, the function ascends the tree, refitting the AABBs and updating the node heights. This is similar to stage 3 of the insertion function.
-
-\section{Subtree Rotations}
-
-Consider a game world with many identical geometric objects in a row as shown in Figure~\ref{fig:tile_based}. Such configurations are common in games, especially in tile-based or voxel-based game worlds. The dynamic tree is built by inserting objects from left to right. The resulting tree is shown in Figure~\ref{fig:linked_list}. This is an undesirable tree because it is has the form of a linked list and the height of the tree is equal to the number of objects. Using an area of 1 for the AABB of each game object, the tree a total internal node area of 35. A balanced tree shown in Figure~\ref{fig:balanced} has a total internal node area of 24.
+For example, consider the ordered objects in Figure~\ref{fig:tile_based}. When these objects are inserted into an empty tree in order from left to right, then a tree is built as shown in Figure~\ref{fig:linked_list}. Even though the SAH optimal choice is made for each leaf insertion, the final tree is far from optimal. In this case the optimimal tree should be balanced. Instead the tree has the form a of linked list. This makes ray casts take $O(N)$ time.
 
 \begin{figure}
 	\begin{center}
 		\includesvg[pretex=\Large]{images/TileBased}
 	\end{center}
-	\caption{Game world with many geometric objects in a row}
+	\caption{Sorted input of a tile-based world common in 2D games.}
 	\label{fig:tile_based}
 \end{figure}
 
@@ -508,9 +211,79 @@ Consider a game world with many identical geometric objects in a row as shown in
 	\begin{center}
 		\includesvg[pretex=\Large]{images/LinkedList}
 	\end{center}
-	\caption{Tree built in the shape of a linked list. The area is shown next to each internal node. Total internal node area is 35. }
+	\caption{Tree built in the shape of a linked list.}
 	\label{fig:linked_list}
 \end{figure}
+
+The linked list tree structure also particularly troubling because this causes large stack usage in recursive ray-cast algorithms. If a local stack is used, this can lead to heap allocations which can further cripple performance. One is better off using a brute-force algorithm.
+
+\section{Tree Rotations}
+Tree rotations were applied by Kensler~\cite{Kensler2008} to optimize a tree after it is built. These are local operations similar to AVL and red-black tree rotations. Unlike traditional binary trees used for sorting, bounding volume hierarchies do not require child ordering. For example, Figure~\ref{fig:equivalent_trees} shows two binary trees that are equivalent bounding volume hierarchies.
+
+\begin{figure}
+	\begin{center}
+		\includesvg[pretex=\tiny, width=\textwidth]{images/EquivalentTrees}
+	\end{center}
+	\caption{Equivalent bounding volume hierarchies}
+	\label{fig:equivalent_trees}
+\end{figure}
+
+Figure~\ref{fig:possible_rotations} shows four possible sub-tree rotations when a node has four grandchildren. As Kensler noted, only the child areas of $B$ and $C$ can change after rotation. The bounding box of the sub-tree root $A$ does not change, nor do the bounding boxes of the grandchildren $D$, $E$, $F$, and $G$. Thus this is a local operation that can be applied to any sub-tree inside a binary tree, as long as the sub-tree root has grandchildren. In the case where the sub-tree root has only two grandchildren, two possible rotations exist.
+
+\begin{figure}
+	\begin{center}
+		\includesvg[pretex=\large, width=0.8\textwidth]{images/RotatePossible}
+	\end{center}
+	\caption{Four possible tree rotations. Each rotation swaps a child node with a grandchild node.}
+	\label{fig:possible_rotations}
+\end{figure}
+
+Tree rotations can be applied to deal with sorted input. In Stage 3 of leaf insertion the ancestor bounding boxes are refitted to contain the new leaf. Immediately after an ancestor is refitted the four possible rotations are considered. If a lower total surface area for the children $B$ and $C$ is found the rotation is performed. Then the refitting process continues until the root node is reached. This process is illustrated in Algorithm~\ref{alg:stage3}. For brevity the actual rotation operation is left out since it is just a simple (but somewhat lengthy) matter of re-arranging indices and updating the bounding box of $B$ or $C$. Also the algorithm assumes $B$ and $C$ are both internal nodes. The algorithm can be easily adapted to the case of $B$ or $C$ being a leaf node (but not both).
+
+\begin{algorithm}
+	\caption{Stage 3: Refit tree after inserting $L$. Assumes $B$ and $C$ are internal nodes at each level.}
+	\label{alg:stage3}
+	\begin{algorithmic}
+		\STATE $P = parent(L)$
+		\STATE $A = parent(P)$
+		\WHILE{$A$ is not null}
+		\STATE \COMMENT{Refit $A$}
+		\STATE $A = B \cup C$ 
+		\STATE \COMMENT{Compute rotation costs}
+		\STATE $C_{base} = SA(B) + SA(C)$
+		\STATE $C_{BF} = SA(B) + SA(B \cup G)$
+		\STATE $C_{BG} = SA(B) + SA(B \cup F)$
+		\STATE $C_{CD} = SA(C) + SA(C \cup E)$
+		\STATE $C_{CE} = SA(C) + SA(C \cup D)$
+		\STATE Perform best rotation \COMMENT{omitted for brevity}
+		\STATE $A = parent(A)$
+		\ENDWHILE
+	\end{algorithmic}
+\end{algorithm}
+
+\section{Results}
+Results are generated using the open source library \emph{dynamic-tree}~\cite{Catto2019}.
+
+Results are compared using the \emph{surface area ratio} (SAR). This is a non-dimensional number that compares the area of the internal nodes to the area of the root node. Let $T$ be the set of internal nodes excluding the root node, then:
+\begin{equation}
+	SAR = \frac{\sum_{i \in T} SA(i)}{SA(root)}
+\end{equation}
+
+Algorithm~\ref{alg:stage3} produces a balanced binary tree for sorted input. The input of Figure~\ref{fig:tile_based} produces the tree shown in Figure~\ref{fig:sort_balanced}.
+
+\begin{figure}
+	\begin{center}
+		\includesvg[pretex=\small, width=0.8\textwidth]{images/sort_balanced}
+	\end{center}
+	\caption{Balanced tree produced using tree rotations during the refit phase of leaf insertion.}
+	\label{fig:sort_balanced}
+\end{figure}
+
+\section{Conclusion}
+
+\section{Subtree Rotations}
+
+Consider a game world with many identical geometric objects in a row as shown in Figure~\ref{fig:tile_based}. Such configurations are common in games, especially in tile-based or voxel-based game worlds. The dynamic tree is built by inserting objects from left to right. The resulting tree is shown in Figure~\ref{fig:linked_list}. This is an undesirable tree because it is has the form of a linked list and the height of the tree is equal to the number of objects. Using an area of 1 for the AABB of each game object, the tree a total internal node area of 35. A balanced tree shown in Figure~\ref{fig:balanced} has a total internal node area of 24.
 
 \begin{figure}
 	\begin{center}
@@ -543,16 +316,6 @@ There are similar formulas for the other rotations. There are a total of 5 possi
 Rotations are introduced to the insertion algorithm in Stage 3. While ascending the tree, rotations are applied at each node that has two levels below (has grandchildren). This is done after the node's height and AABB are updated.
 
 Using the modified Stage 3 with rotations applied to the case of Figure~\ref{fig:tile_based} leads directly to the balanced tree of Figure~\ref{fig:balanced}.
-
-\section{Height Protection}
-
-Games are real-time and it is difficult to predict every scenario that may arise during game play. It seems prudent to have an extra bit of security against bad cases like the linked list configuration of Figure~\ref{fig:linked_list}. A small modification to the rotation algorithm can help.
-
-The rotation operation can potentially increase the height of the current sub-tree. When considering the cost of the various rotation operations, it is also possible to consider the height increase encured by a given rotation.
-
-It is possible to increase the height of the top node $A$ by one and this should not always be prevented. That is too conservative and may block some significant improvements to the tree. Instead consider the height of the two nodes being swapped. For example, in Figure~\ref{fig:rotate}, $B$ and $F$ are being swapped. $B$ is being lowered and $F$ is being raised. If $height(B)$ is significantly larger than $height(F)$ then it may be best to skip this rotation. For example, the rotation $B \Leftrightarrow F$ is skipped if
-\[ height(B) \geq height(F) + \delta \]
-where $\delta$ should be a small positive integer (e.g. $\delta = 3$).
 
 \section{Object Movement}
 

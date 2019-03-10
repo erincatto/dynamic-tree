@@ -26,7 +26,7 @@ void Test::Create(dtTreeHeuristic heuristic, bool rotate)
 	dtTimer timer;
 	for (int i = 0; i < m_count; ++i)
 	{
-		m_proxies[i] = m_tree.CreateProxy(m_boxes[i]);
+		m_proxies[i] = m_tree.CreateProxy(m_boxes[i], i);
 	}
 	m_buildTime = timer.GetMilliseconds();
 
@@ -46,7 +46,7 @@ void Test::Update(Draw& draw, int reinsertIter, int shuffleIter)
 		int index = m_base;
 		m_tree.DestroyProxy(m_proxies[index]);
 
-		m_proxies[index] = m_tree.CreateProxy(m_boxes[index]);
+		m_proxies[index] = m_tree.CreateProxy(m_boxes[index], i);
 
 		m_base += 1;
 		if (m_base == m_count)

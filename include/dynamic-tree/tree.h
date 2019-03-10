@@ -42,6 +42,8 @@ struct dtNode
 	// leaf = 0, free node = dt_nullNode
 	int height;
 
+	int objectIndex;
+
 	bool isLeaf;
 };
 
@@ -70,7 +72,7 @@ struct dtTree
 	void Clear();
 
 	/// Create a proxy. Provide a tight fitting AABB and a userData pointer.
-	int CreateProxy(const dtAABB& aabb);
+	int CreateProxy(const dtAABB& aabb, int objectIndex);
 
 	/// Destroy a proxy. This asserts if the id is invalid.
 	void DestroyProxy(int proxyId);

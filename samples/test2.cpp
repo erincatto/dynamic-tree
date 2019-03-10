@@ -26,10 +26,12 @@ struct Test2 : Test
 
 	void CreateBoxes() override
 	{
-		Allocate(10);
+		const int count = 1 << 5;
+
+		Allocate(count);
 
 		float x = 0.0f;
-		for (int i = 0; i < 10; ++i)
+		for (int i = 0; i < count; ++i)
 		{
 			m_boxes[i].lowerBound = dtVecSet(x, 0.0f, 0.0f);
 			m_boxes[i].upperBound = dtVecSet(x + 1.0f, 1.0f, 1.0f);
