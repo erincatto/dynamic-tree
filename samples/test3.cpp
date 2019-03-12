@@ -12,12 +12,30 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "test.h"
 #include "draw.h"
-
+#include "imgui/imgui.h"
 #include <stdio.h>
 #include <vector>
 
 struct Test3 : Test
 {
+	enum
+	{
+		e_fileCount = 8
+	};
+
+	Test3()
+	{
+		m_fileIndex = 0;
+		m_fileNames[0] = "BlizzardLandTree";
+		m_fileNames[1] = "BlizzardLandEditorTree";
+		m_fileNames[2] = "GibraltarTree";
+		m_fileNames[3] = "HimalayasTree";
+		m_fileNames[4] = "MexicoTree";
+		m_fileNames[5] = "BlizzardLandDynamic";
+		m_fileNames[6] = "BlizzardLandKinematic";
+		m_fileNames[7] = "BlizzardLandStatic";
+	}
+
 	const char* GetCategory() const
 	{
 		return "Benchmark";
@@ -30,11 +48,14 @@ struct Test3 : Test
 
 	void CreateBoxes() override
 	{
-		const char* fileName = "data/BlizzardLandEditorTree.txt";
+		const char* fileName = m_fileNames[m_fileIndex];
+
+		char filePath[128];
+		sprintf_s(filePath, "data/%s.txt", fileName);
 
 		int vertexCount = 0;
 
-		FILE* file = fopen(fileName, "r");
+		FILE* file = fopen(filePath, "r");
 		if (file == nullptr)
 		{
 			return;
@@ -88,8 +109,37 @@ struct Test3 : Test
 			m_boxes[i].upperBound = vertices[2 * i + 1];
 		}
 
-		//m_count = 1000;
+		//m_count = 100;
 	}
+
+	void Update(Draw& draw, int reinsertIter, int shuffleIter) override
+	{
+		if (draw.m_showUI == false)
+		{
+			Test::Update(draw, reinsertIter, shuffleIter);
+			return;
+		}
+
+		float scale = draw.m_uiScale;
+		float menuWidth = 150.0f;
+		ImGui::SetNextWindowPos(ImVec2(10.0f * scale, 300.0f * scale));
+		ImGui::SetNextWindowSize(ImVec2(250.0f * scale, 100.0f * scale));
+		ImGui::Begin("Test Params", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+
+		if (ImGui::Combo("File", &m_fileIndex, m_fileNames, e_fileCount))
+		{
+			dtTreeHeuristic heuristic = m_tree.m_heuristic;
+			Destroy();
+			Create(heuristic);
+		}
+
+		ImGui::End();
+
+		Test::Update(draw, reinsertIter, shuffleIter);
+	}
+
+	const char* m_fileNames[e_fileCount];
+	int m_fileIndex;
 };
 
 static Test3 s_test;

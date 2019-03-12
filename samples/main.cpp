@@ -71,7 +71,6 @@ namespace
 	float g_treeArea = 0.0f;
 
 	dtTreeHeuristic g_heuristic = dt_sah;
-	bool g_rotate = true;
 	bool g_drawInternal = true;
 
 	int g_reinsertIter = 0;
@@ -107,7 +106,7 @@ static void InitTest(int index)
 	g_settings.m_testIndex = dtClamp(index, 0, g_testCount - 1);
 
 	g_test = g_tests[g_settings.m_testIndex];
-	g_test->Create(g_heuristic, g_rotate);
+	g_test->Create(g_heuristic);
 
 	g_proxyCount = g_test->m_tree.GetProxyCount();
 	g_nodeCount = g_test->m_tree.m_nodeCount;
@@ -249,19 +248,15 @@ static void DrawUI()
 	{
 		if (ImGui::BeginTabItem("Controls"))
 		{
-			bool rotate = ImGui::Checkbox("Rotate", &g_rotate);
-			if (rotate)
-			{
-				InitTest(g_settings.m_testIndex);
-			}
-
 			ImGui::SliderInt("##Reinsert", &g_reinsertIter, 0, 100, "reinsert %d");
 			ImGui::SliderInt("##Shuffle", &g_shuffleIter, 0, 100, "shuffle %d");
 
 			static int heuristic = int(g_heuristic);
 			ImGui::RadioButton("SAH", &heuristic, int(dt_sah));
+			ImGui::RadioButton("SAH Rotate", &heuristic, int(dt_sah_rotate));
 			ImGui::RadioButton("Bittner", &heuristic, int(dt_bittner));
 			ImGui::RadioButton("Box2D", &heuristic, int(dt_box2d));
+			ImGui::RadioButton("Box2D Rotate", &heuristic, int(dt_box2d_rotate));
 			ImGui::RadioButton("Manhattan", &heuristic, int(dt_manhattan));
 			if (heuristic != g_heuristic)
 			{

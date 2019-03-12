@@ -50,7 +50,6 @@ dtTree::dtTree()
 	m_maxHeapCount = 0;
 
 	m_heuristic = dt_sah;
-	m_rotate = true;
 }
 
 dtTree::~dtTree()
@@ -178,7 +177,7 @@ void dtTree::DestroyProxy(int proxyId)
 
 static inline bool operator < (const dtCandidateNode& a, const dtCandidateNode& b)
 {
-	return a.inducedCost > b.inducedCost;
+	return a.inheritanceCost > b.inheritanceCost;
 }
 
 // Insert using branch and bound. Push children without consideration.
@@ -199,7 +198,7 @@ void dtTree::InsertLeafBittner(int leaf)
 	// Stage 1: find the best sibling for this node
 	dtCandidateNode candidate;
 	candidate.index = m_root;
-	candidate.inducedCost = 0.0f;
+	candidate.inheritanceCost = 0.0f;
 	m_heap.clear();
 	m_heap.push_back(candidate);
 
@@ -213,8 +212,8 @@ void dtTree::InsertLeafBittner(int leaf)
 		m_heap.pop_back();
 
 		int index = candidate.index;
-		float inducedCost = candidate.inducedCost;
-		if (inducedCost + areaL > bestCost)
+		float inheritanceCost = candidate.inheritanceCost;
+		if (inheritanceCost + areaL > bestCost)
 		{
 			// Optimum found
 			break;
@@ -222,7 +221,7 @@ void dtTree::InsertLeafBittner(int leaf)
 
 		const dtNode& node = m_nodes[index];
 		float directCost = dtArea(dtUnion(node.aabb, aabbL));
-		float totalCost = inducedCost + directCost;
+		float totalCost = inheritanceCost + directCost;
 
 		if (totalCost <= bestCost)
 		{
@@ -235,20 +234,20 @@ void dtTree::InsertLeafBittner(int leaf)
 			continue;
 		}
 
-		inducedCost += directCost - dtArea(node.aabb);
-		float lowerBoundCost = inducedCost + areaL;
+		inheritanceCost += directCost - dtArea(node.aabb);
+		float lowerBoundCost = inheritanceCost + areaL;
 		if (lowerBoundCost <= bestCost)
 		{
 			dtCandidateNode candidate1;
 			candidate1.index = node.child1;
-			candidate1.inducedCost = inducedCost;
+			candidate1.inheritanceCost = inheritanceCost;
 
 			m_heap.push_back(candidate1);
 			std::push_heap(m_heap.begin(), m_heap.end());
 
 			dtCandidateNode candidate2;
 			candidate2.index = node.child2;
-			candidate2.inducedCost = inducedCost;
+			candidate2.inheritanceCost = inheritanceCost;
 
 			m_heap.push_back(candidate2);
 			std::push_heap(m_heap.begin(), m_heap.end());
@@ -378,7 +377,7 @@ void dtTree::InsertLeafSAH(int leaf)
 	{
 		const dtNode& node = m_nodes[m_root];
 		bestCost = dtArea(dtUnion(node.aabb, aabbL));
-		candidate.inducedCost = bestCost - dtArea(node.aabb);
+		candidate.inheritanceCost = bestCost - dtArea(node.aabb);
 	}
 
 	m_heap.clear();
@@ -391,7 +390,7 @@ void dtTree::InsertLeafSAH(int leaf)
 		m_heap.pop_back();
 
 		int index = candidate.index;
-		float lowerBoundCost = candidate.inducedCost + areaL;
+		float lowerBoundCost = candidate.inheritanceCost + areaL;
 		if (lowerBoundCost > bestCost)
 		{
 			// Optimum found
@@ -409,19 +408,19 @@ void dtTree::InsertLeafSAH(int leaf)
 		{
 			const dtNode& child1 = m_nodes[node.child1];
 			float directCost = dtArea(dtUnion(child1.aabb, aabbL));
-			float totalCost = directCost + candidate.inducedCost;
+			float totalCost = directCost + candidate.inheritanceCost;
 			if (totalCost <= bestCost)
 			{
 				bestCost = totalCost;
 				bestSibling = node.child1;
 			}
 
-			float inducedCost = totalCost - dtArea(child1.aabb);
-			if (inducedCost + areaL <= bestCost)
+			float inheritanceCost = totalCost - dtArea(child1.aabb);
+			if (inheritanceCost + areaL <= bestCost)
 			{
 				dtCandidateNode candidate1;
 				candidate1.index = node.child1;
-				candidate1.inducedCost = inducedCost;
+				candidate1.inheritanceCost = inheritanceCost;
 				m_heap.push_back(candidate1);
 				std::push_heap(m_heap.begin(), m_heap.end());
 			}
@@ -430,19 +429,19 @@ void dtTree::InsertLeafSAH(int leaf)
 		{
 			const dtNode& child2 = m_nodes[node.child2];
 			float directCost = dtArea(dtUnion(child2.aabb, aabbL));
-			float totalCost = directCost + candidate.inducedCost;
+			float totalCost = directCost + candidate.inheritanceCost;
 			if (totalCost <= bestCost)
 			{
 				bestCost = totalCost;
 				bestSibling = node.child2;
 			}
 
-			float inducedCost = totalCost - dtArea(child2.aabb);
-			if (inducedCost + areaL <= bestCost)
+			float inheritanceCost = totalCost - dtArea(child2.aabb);
+			if (inheritanceCost + areaL <= bestCost)
 			{
 				dtCandidateNode candidate2;
 				candidate2.index = node.child2;
-				candidate2.inducedCost = inducedCost;
+				candidate2.inheritanceCost = inheritanceCost;
 				m_heap.push_back(candidate2);
 				std::push_heap(m_heap.begin(), m_heap.end());
 			}
@@ -542,7 +541,7 @@ void dtTree::InsertLeafSAH(int leaf)
 		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
 		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
 
-		if (m_rotate)
+		if (m_heuristic == dt_sah_rotate)
 		{
 			Rotate(index);
 		}
@@ -574,33 +573,31 @@ void dtTree::InsertLeafBox2D(int leaf)
 		int child1 = m_nodes[index].child1;
 		int child2 = m_nodes[index].child2;
 
-		float areaP = dtArea(m_nodes[index].aabb);
+		float areaP1 = dtArea(m_nodes[index].aabb);
+		float areaP2 = dtArea(dtUnion(m_nodes[index].aabb, aabbL));
 
-		dtAABB aabbG = dtUnion(m_nodes[index].aabb, aabbL);
-		float areaG = dtArea(aabbG);
+		// Cost of creating a new parent for this node P and the new leaf L
+		float Cp = areaP2;
 
-		// Cost of creating a grand parent G for this node P and the new leaf L
-		float Cb = areaG;
-
-		// Minimum cost of pushing the leaf further down the tree
-		float deltaAreaP = areaG - areaP;
+		// Inheritance cost seen by children
+		float deltaAreaP = areaP2 - areaP1;
 
 		// Cost of descending into child 1
 		float C1;
 		if (m_nodes[child1].isLeaf)
 		{
 			// Child 1 is a leaf
-			// Cost of creating new node X and increasing area of node P
-			dtAABB aabbX = dtUnion(aabbL, m_nodes[child1].aabb);
-			C1 = deltaAreaP + dtArea(aabbX);
+			// Cost of creating new node and increasing area of node P
+			float directCost = dtArea(dtUnion(aabbL, m_nodes[child1].aabb));
+			C1 = deltaAreaP + directCost;
 		}
 		else
 		{
 			// Child 1 is an internal node
-			// Cost of creating new node Y and increasing area of node P and node 1
-			dtAABB aabb1 = dtUnion(aabbL, m_nodes[child1].aabb);
-			float deltaArea1 = dtArea(aabb1) - dtArea(m_nodes[child1].aabb);
-			C1 = deltaAreaP + deltaArea1 + areaL;
+			// Estimate cost of inserting under child 1
+			float deltaArea1 = dtArea(dtUnion(aabbL, m_nodes[child1].aabb)) - dtArea(m_nodes[child1].aabb);
+			float directCost = areaL;
+			C1 = deltaAreaP + deltaArea1 + directCost;
 		}
 
 		// Cost of descending into child 2
@@ -608,22 +605,29 @@ void dtTree::InsertLeafBox2D(int leaf)
 		if (m_nodes[child2].isLeaf)
 		{
 			// Child 2 is a leaf
-			// Cost of creating new node X and increasing area of node P
-			dtAABB aabbX = dtUnion(aabbL, m_nodes[child2].aabb);
-			C2 = deltaAreaP + dtArea(aabbX);
+			// Cost of creating new node and increasing area of node P
+			float directCost = dtArea(dtUnion(aabbL, m_nodes[child2].aabb));
+			C2 = deltaAreaP + directCost;
 		}
 		else
 		{
 			// Child 2 is an internal node
-			// Cost of creating new node Y and increasing area of node P and node 2
-			dtAABB aabb2 = dtUnion(aabbL, m_nodes[child2].aabb);
-			float deltaArea2 = dtArea(aabb2) - dtArea(m_nodes[child2].aabb);
-			C2 = deltaAreaP + deltaArea2 + areaL;
+			// Estimate cost of inserting under child 2
+			float deltaArea2 = dtArea(dtUnion(aabbL, m_nodes[child2].aabb)) - dtArea(m_nodes[child2].aabb);
+			float directCost = areaL;
+			C2 = deltaAreaP + deltaArea2 + directCost;
 		}
 
-		// Descend according to the minimum cost.
-		if (0.9f * Cb < C1 && 0.9f * Cb < C2)
+		if (dtAbs(C1 - C2) < 0.0001f)
 		{
+			C1 += 0.0f;
+		}
+
+		// Descend according to the minimum cost. Use a bias to reduce tree height.
+		float bias = 1.0f;
+		if (bias * Cp < C1 && bias * Cp < C2)
+		{
+			// Found best sibling is P
 			break;
 		}
 
@@ -687,7 +691,7 @@ void dtTree::InsertLeafBox2D(int leaf)
 		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
 		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
 
-		if (m_rotate)
+		if (m_heuristic == dt_box2d_rotate)
 		{
 			Rotate(index);
 		}
@@ -799,21 +803,25 @@ void dtTree::InsertLeafManhattan(int leaf)
 
 void dtTree::InsertLeaf(int leaf)
 {
-	if (m_heuristic == dt_sah)
+	switch (m_heuristic)
 	{
+	case dt_sah:
+	case dt_sah_rotate:
 		InsertLeafSAH(leaf);
-	}
-	else if (m_heuristic == dt_bittner)
-	{
+		return;
+
+	case dt_bittner:
 		InsertLeafBittner(leaf);
-	}
-	else if (m_heuristic == dt_box2d)
-	{
+		return;
+
+	case dt_box2d:
+	case dt_box2d_rotate:
 		InsertLeafBox2D(leaf);
-	}
-	else
-	{
+		return;
+
+	case dt_manhattan:
 		InsertLeafManhattan(leaf);
+		return;
 	}
 }
 
@@ -1820,11 +1828,11 @@ void dtTree::BuildTopDownMedianSplit(int* proxies, dtAABB* boxes, int count)
 	for (int i = 0; i < count; ++i)
 	{
 		m_nodes[i].aabb = boxes[i];
-		// Use child1 to store the proxy index
-		m_nodes[i].child1 = i;
+		m_nodes[i].child1 = dt_nullNode;
 		m_nodes[i].child2 = dt_nullNode;
 		m_nodes[i].height = 0;
 		m_nodes[i].isLeaf = true;
+		m_nodes[i].objectIndex = i;
 		m_nodes[i].next = -1;
 		m_nodes[i].parent = dt_nullNode;
 	}
@@ -1838,9 +1846,8 @@ void dtTree::BuildTopDownMedianSplit(int* proxies, dtAABB* boxes, int count)
 		dtNode& n = m_nodes[i];
 		if (n.isLeaf)
 		{
-			assert(0 <= n.child1 && n.child1 < count);
-			proxies[n.child1] = i;
-			n.child1 = dt_nullNode;
+			assert(0 <= n.objectIndex && n.objectIndex < count);
+			proxies[n.objectIndex] = i;
 		}
 	}
 
@@ -1913,15 +1920,31 @@ int dtTree::PartitionBoxes(int parentIndex, dtNode* leaves, int count)
 	int leftCount = i1 + 1;
 	int rightCount = count - leftCount;
 
-	if (leftCount == 0)
+#if 0
+	// TODO_ERIN validation
+	for (int i = 0; i < leftCount; ++i)
 	{
-		leftCount = 1;
-		rightCount -= 1;
+		dtVec leafCenter = dtCenter(leaves[i].aabb);
+		if (dtGet(leafCenter, axisIndex) > ca)
+		{
+			ca += 0.0f;
+		}
 	}
-	else if (rightCount == 0)
+
+	for (int i = leftCount; i < count; ++i)
 	{
-		leftCount -= 1;
-		rightCount = 1;
+		dtVec leafCenter = dtCenter(leaves[i].aabb);
+		if (dtGet(leafCenter, axisIndex) < ca)
+		{
+			ca += 0.0f;
+		}
+	}
+#endif
+
+	if (leftCount == 0 || rightCount == 0)
+	{
+		leftCount = count / 2;
+		rightCount = count - leftCount;
 	}
 
 	node.child1 = PartitionBoxes(nodeIndex, leaves, leftCount);

@@ -19,9 +19,11 @@
 enum dtTreeHeuristic
 {
 	dt_sah = 0,
-	dt_bittner = 1,
-	dt_box2d = 2,
-	dt_manhattan = 3
+	dt_sah_rotate,
+	dt_bittner,
+	dt_box2d,
+	dt_box2d_rotate,
+	dt_manhattan
 };
 
 /// A node in the dynamic tree. The client does not interact with this directly.
@@ -50,7 +52,7 @@ struct dtNode
 struct dtCandidateNode
 {
 	int index;
-	float inducedCost;
+	float inheritanceCost;
 };
 
 /// A dynamic AABB tree broad-phase, inspired by Nathanael Presson's btDbvt.
@@ -153,7 +155,6 @@ struct dtTree
 	int m_insertionCount;
 
 	dtTreeHeuristic m_heuristic;
-	bool m_rotate;
 	
 	std::vector<dtCandidateNode> m_heap;
 	int m_maxHeapCount;

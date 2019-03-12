@@ -16,12 +16,11 @@
 #include <stdio.h>
 #include <assert.h>
 
-void Test::Create(dtTreeHeuristic heuristic, bool rotate)
+void Test::Create(dtTreeHeuristic heuristic)
 {
 	CreateBoxes();
 
 	m_tree.m_heuristic = heuristic;
-	m_tree.m_rotate = rotate;
 
 	dtTimer timer;
 	for (int i = 0; i < m_count; ++i)

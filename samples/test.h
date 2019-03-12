@@ -21,10 +21,10 @@ struct Test
 	virtual const char* GetName() const = 0;
 	virtual void CreateBoxes() = 0;
 	
-	void Create(dtTreeHeuristic heuristic, bool rotate);
+	void Create(dtTreeHeuristic heuristic);
 	void Allocate(int count);
 	void Destroy();
-	void Update(Draw& draw, int reinsertIter, int shuffleIter);
+	virtual void Update(Draw& draw, int reinsertIter, int shuffleIter);
 
 	void RebuildTopDownSAH();
 	void RebuildTopDownMedian();
