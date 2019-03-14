@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <assert.h>
 
-#define DT_VALIDATE 0
+#define DT_VALIDATE 1
 
 dtTree::dtTree()
 {
@@ -554,6 +554,7 @@ void dtTree::InsertLeafSAH(int leaf)
 
 int g_sameCount = 0;
 
+#if 1
 void dtTree::InsertLeafApproxSAH(int leaf)
 {
 	++m_insertionCount;
@@ -606,7 +607,7 @@ void dtTree::InsertLeafApproxSAH(int leaf)
 		{
 			// Child 1 is a leaf
 			// Cost of creating new node and increasing area of node P
-			float directCost = dtArea(dtUnion(aabbL, m_nodes[child1].aabb));
+			float directCost = dtArea(dtUnion(m_nodes[child1].aabb, aabbL));
 			C1 = directCost + inheritedCost;
 
 			// Need this here due to while condition above
@@ -620,7 +621,7 @@ void dtTree::InsertLeafApproxSAH(int leaf)
 		{
 			// Child 1 is an internal node
 			// Lower bound cost of inserting under child 1
-			float deltaArea1 = dtArea(dtUnion(aabbL, m_nodes[child1].aabb)) - dtArea(m_nodes[child1].aabb);
+			float deltaArea1 = dtArea(dtUnion(m_nodes[child1].aabb, aabbL)) - dtArea(m_nodes[child1].aabb);
 			float directCost = areaL;
 			C1 = directCost + inheritedCost + deltaArea1;
 		}
@@ -631,7 +632,7 @@ void dtTree::InsertLeafApproxSAH(int leaf)
 		{
 			// Child 2 is a leaf
 			// Cost of creating new node and increasing area of node P
-			float directCost = dtArea(dtUnion(aabbL, m_nodes[child2].aabb));
+			float directCost = dtArea(dtUnion(m_nodes[child2].aabb, aabbL));
 			C2 = directCost + inheritedCost;
 
 			// Need this here due to while condition above
@@ -645,9 +646,9 @@ void dtTree::InsertLeafApproxSAH(int leaf)
 		{
 			// Child 2 is an internal node
 			// Lower bound cost of inserting under child 2
-			float deltaArea2 = dtArea(dtUnion(aabbL, m_nodes[child2].aabb)) - dtArea(m_nodes[child2].aabb);
+			float deltaArea2 = dtArea(dtUnion(m_nodes[child2].aabb, aabbL)) - dtArea(m_nodes[child2].aabb);
 			float directCost = areaL;
-			C2 = directCost + inheritedCost + deltaArea2 ;
+			C2 = directCost + inheritedCost + deltaArea2;
 		}
 
 		// Can the cost possibly be decreased?
@@ -737,6 +738,177 @@ void dtTree::InsertLeafApproxSAH(int leaf)
 
 	Validate();
 }
+
+#else
+
+void dtTree::InsertLeafApproxSAH(int leaf)
+{
+	++m_insertionCount;
+
+	if (m_root == dt_nullNode)
+	{
+		m_root = leaf;
+		m_nodes[m_root].parent = dt_nullNode;
+		return;
+	}
+
+	dtAABB aabbL = m_nodes[leaf].aabb;
+	float areaL = dtArea(aabbL);
+	dtVec centerL = dtCenter(aabbL);
+
+	float directCost = dtArea(dtUnion(m_nodes[m_root].aabb, aabbL));
+	float inheritedCost = directCost - dtArea(m_nodes[m_root].aabb);
+
+	int bestSibling = m_root;
+	float bestCost = directCost;
+
+	// Stage 1: find the best sibling for this node
+	int index = m_root;
+	while (m_nodes[index].isLeaf == false)
+	{
+		int child1 = m_nodes[index].child1;
+		int child2 = m_nodes[index].child2;
+
+		float ic = 0.0f;
+		int i = index;
+		while (i != dt_nullNode)
+		{
+			const dtAABB& box = m_nodes[i].aabb;
+			ic += dtArea(dtUnion(box, aabbL)) - dtArea(box);
+			i = m_nodes[i].parent;
+		}
+
+		if (dtAbs(ic - inheritedCost) > 0.001f)
+		{
+			ic += 0.0f;
+		}
+
+		// Cost of child 1
+		float directCost1 = dtArea(dtUnion(m_nodes[child1].aabb, aabbL));
+		float C1 = directCost1 + inheritedCost;
+		if (C1 < bestCost)
+		{
+			bestSibling = child1;
+			bestCost = C1;
+		}
+
+		// Cost of child 2
+		float directCost2 = dtArea(dtUnion(m_nodes[child2].aabb, aabbL));
+		float C2 = directCost2 + inheritedCost;
+		if (C2 < bestCost)
+		{
+			bestSibling = child2;
+			bestCost = C2;
+		}
+
+		float deltaArea1 = directCost1 - dtArea(m_nodes[child1].aabb);
+		float deltaArea2 = directCost2 - dtArea(m_nodes[child2].aabb);
+		//float lowerC1 = areaL + inheritedCost + deltaArea1;
+		//float lowerC2 = areaL + inheritedCost + deltaArea2;
+
+		//// Can the cost possibly be decreased?
+		//if (bestCost < lowerC1 && bestCost < lowerC2)
+		//{
+		//	// Found best sibling
+		//	break;
+		//}
+
+		// If both children grow by the same amount, then another heuristic is needed to decide
+		// on the best path.
+		//if (dtAbs(deltaArea1 - deltaArea2) < 0.001f * areaL)
+		//{
+		//	dtVec d1 = dtCenter(m_nodes[child1].aabb) - centerL;
+		//	dtVec d2 = dtCenter(m_nodes[child2].aabb) - centerL;
+		//	float distSqr1 = dtGetX(dtDot3(d1, d1));
+		//	float distSqr2 = dtGetX(dtDot3(d2, d2));
+		//	++g_sameCount;
+
+		//	if (distSqr1 < distSqr2)
+		//	{
+		//		inheritedCost += deltaArea1;
+		//		index = child1;
+		//	}
+		//	else
+		//	{
+		//		inheritedCost += deltaArea2;
+		//		index = child2;
+		//	}
+		//}
+		//else
+			
+			if (C1 < C2)
+		{
+			inheritedCost += deltaArea1;
+			index = child1;
+		}
+		else
+		{
+			inheritedCost += deltaArea2;
+			index = child2;
+		}
+	}
+
+	int sibling = bestSibling;
+
+	// Stage 2: create a new parent
+	int oldParent = m_nodes[sibling].parent;
+	int newParent = AllocateNode();
+	m_nodes[newParent].parent = oldParent;
+	m_nodes[newParent].aabb = dtUnion(aabbL, m_nodes[sibling].aabb);
+	m_nodes[newParent].height = m_nodes[sibling].height + 1;
+
+	if (oldParent != dt_nullNode)
+	{
+		// The sibling was not the root.
+		if (m_nodes[oldParent].child1 == sibling)
+		{
+			m_nodes[oldParent].child1 = newParent;
+		}
+		else
+		{
+			m_nodes[oldParent].child2 = newParent;
+		}
+
+		m_nodes[newParent].child1 = sibling;
+		m_nodes[newParent].child2 = leaf;
+		m_nodes[sibling].parent = newParent;
+		m_nodes[leaf].parent = newParent;
+	}
+	else
+	{
+		// The sibling was the root.
+		m_nodes[newParent].child1 = sibling;
+		m_nodes[newParent].child2 = leaf;
+		m_nodes[sibling].parent = newParent;
+		m_nodes[leaf].parent = newParent;
+		m_root = newParent;
+	}
+
+	// Stage 3: walk back up the tree fixing heights and AABBs
+	index = m_nodes[leaf].parent;
+	while (index != dt_nullNode)
+	{
+		int child1 = m_nodes[index].child1;
+		int child2 = m_nodes[index].child2;
+
+		assert(child1 != dt_nullNode);
+		assert(child2 != dt_nullNode);
+
+		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
+		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
+
+		if (m_heuristic == dt_approx_sah_rotate)
+		{
+			Rotate(index);
+		}
+
+		index = m_nodes[index].parent;
+	}
+
+	Validate();
+}
+
+#endif
 
 // 
 static inline float dtManhattan(const dtAABB& a, const dtAABB& b)
