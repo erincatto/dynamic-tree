@@ -64,13 +64,7 @@ namespace
 	int g_testCount = 0;
 	Test* g_test = nullptr;
 
-	int g_proxyCount = 0;
-	int g_nodeCount = 0;
-	int g_treeHeight = 0;
-	int g_heapCount = 0;
-	float g_treeArea = 0.0f;
-
-	dtTreeHeuristic g_heuristic = dt_sah;
+	dtInsertionHeuristic g_heuristic = dt_sah;
 	bool g_drawInternal = true;
 
 	int g_reinsertIter = 0;
@@ -107,12 +101,6 @@ static void InitTest(int index)
 
 	g_test = g_tests[g_settings.m_testIndex];
 	g_test->Create(g_heuristic);
-
-	g_proxyCount = g_test->m_tree.GetProxyCount();
-	g_nodeCount = g_test->m_tree.m_nodeCount;
-	g_treeHeight = g_test->m_tree.GetHeight();
-	g_heapCount = g_test->m_tree.m_maxHeapCount;
-	g_treeArea = g_test->m_tree.GetAreaRatio();
 }
 
 static void Keyboard(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -255,12 +243,12 @@ static void DrawUI()
 			ImGui::RadioButton("SAH", &heuristic, int(dt_sah));
 			ImGui::RadioButton("SAH Rotate", &heuristic, int(dt_sah_rotate));
 			ImGui::RadioButton("Bittner", &heuristic, int(dt_bittner));
-			ImGui::RadioButton("Box2D", &heuristic, int(dt_box2d));
-			ImGui::RadioButton("Box2D Rotate", &heuristic, int(dt_box2d_rotate));
+			ImGui::RadioButton("Approx SAH", &heuristic, int(dt_approx_sah));
+			ImGui::RadioButton("Approx SAH Rotate", &heuristic, int(dt_approx_sah_rotate));
 			ImGui::RadioButton("Manhattan", &heuristic, int(dt_manhattan));
 			if (heuristic != g_heuristic)
 			{
-				g_heuristic = dtTreeHeuristic(heuristic);
+				g_heuristic = dtInsertionHeuristic(heuristic);
 				InitTest(g_settings.m_testIndex);
 			}
 
@@ -275,22 +263,16 @@ static void DrawUI()
 			if (ImGui::Button("Bottom Up"))
 			{
 				g_test->RebuildBottomUp();
-				g_treeHeight = g_test->m_tree.GetHeight();
-				g_treeArea = g_test->m_tree.GetAreaRatio();
 			}
 
 			if (ImGui::Button("Top Down SAH"))
 			{
 				g_test->RebuildTopDownSAH();
-				g_treeHeight = g_test->m_tree.GetHeight();
-				g_treeArea = g_test->m_tree.GetAreaRatio();
 			}
 
 			if (ImGui::Button("Top Down Median"))
 			{
 				g_test->RebuildTopDownMedian();
-				g_treeHeight = g_test->m_tree.GetHeight();
-				g_treeArea = g_test->m_tree.GetAreaRatio();
 			}
 
 			ImGui::Separator();
@@ -509,7 +491,8 @@ int main(int, char**)
 			g_draw.DrawString(5.0f, 5.0f, "%s", g_test->GetName());
 
 			char buffer[64];
-			sprintf(buffer, "proxies %d, nodes %d, height %d, heap %d, area %.2f", g_proxyCount, g_nodeCount, g_treeHeight, g_heapCount, g_treeArea);
+			sprintf(buffer, "proxies %d, nodes %d, height %d, heap %d, area %.2f",
+				g_test->m_proxyCount, g_test->m_nodeCount, g_test->m_treeHeight, g_test->m_heapCount, g_test->m_treeArea);
 			g_draw.DrawString(5.0f, 20.0f, buffer);
 
 			const dtTree& tree = g_test->m_tree;

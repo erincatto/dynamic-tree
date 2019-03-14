@@ -16,13 +16,13 @@
 
 #define dt_nullNode (-1)
 
-enum dtTreeHeuristic
+enum dtInsertionHeuristic
 {
 	dt_sah = 0,
 	dt_sah_rotate,
 	dt_bittner,
-	dt_box2d,
-	dt_box2d_rotate,
+	dt_approx_sah,
+	dt_approx_sah_rotate,
 	dt_manhattan
 };
 
@@ -120,7 +120,7 @@ struct dtTree
 	void InsertLeaf(int leaf);
 	void InsertLeafSAH(int leaf);
 	void InsertLeafBittner(int leaf);
-	void InsertLeafBox2D(int leaf);
+	void InsertLeafApproxSAH(int leaf);
 	void InsertLeafManhattan(int leaf);
 	void RemoveLeaf(int leaf);
 
@@ -154,7 +154,7 @@ struct dtTree
 
 	int m_insertionCount;
 
-	dtTreeHeuristic m_heuristic;
+	dtInsertionHeuristic m_heuristic;
 	
 	std::vector<dtCandidateNode> m_heap;
 	int m_maxHeapCount;

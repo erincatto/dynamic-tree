@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-void Test::Create(dtTreeHeuristic heuristic)
+void Test::Create(dtInsertionHeuristic heuristic)
 {
 	CreateBoxes();
 
@@ -28,6 +28,18 @@ void Test::Create(dtTreeHeuristic heuristic)
 		m_proxies[i] = m_tree.CreateProxy(m_boxes[i], i);
 	}
 	m_buildTime = timer.GetMilliseconds();
+
+	m_proxyCount = 0;
+	m_nodeCount = 0;
+	m_treeHeight = 0;
+	m_heapCount = 0;
+	m_treeArea = 0.0f;
+
+	m_proxyCount = m_tree.GetProxyCount();
+	m_nodeCount = m_tree.m_nodeCount;
+	m_treeHeight = m_tree.GetHeight();
+	m_heapCount = m_tree.m_maxHeapCount;
+	m_treeArea = m_tree.GetAreaRatio();
 
 	m_base = 0;
 }
@@ -90,6 +102,12 @@ void Test::RebuildTopDownSAH()
 	m_tree.BuildTopDownSAH(m_proxies, m_boxes, m_count);
 	m_buildTime = timer.GetMilliseconds();
 
+	m_proxyCount = m_tree.GetProxyCount();
+	m_nodeCount = m_tree.m_nodeCount;
+	m_treeHeight = m_tree.GetHeight();
+	m_heapCount = m_tree.m_maxHeapCount;
+	m_treeArea = m_tree.GetAreaRatio();
+
 	m_base = 0;
 }
 
@@ -101,6 +119,12 @@ void Test::RebuildTopDownMedian()
 	m_tree.BuildTopDownMedianSplit(m_proxies, m_boxes, m_count);
 	m_buildTime = timer.GetMilliseconds();
 
+	m_proxyCount = m_tree.GetProxyCount();
+	m_nodeCount = m_tree.m_nodeCount;
+	m_treeHeight = m_tree.GetHeight();
+	m_heapCount = m_tree.m_maxHeapCount;
+	m_treeArea = m_tree.GetAreaRatio();
+
 	m_base = 0;
 }
 
@@ -109,6 +133,12 @@ void Test::RebuildBottomUp()
 	dtTimer timer;
 	m_tree.RebuildBottomUp();
 	m_buildTime = timer.GetMilliseconds();
+
+	m_proxyCount = m_tree.GetProxyCount();
+	m_nodeCount = m_tree.m_nodeCount;
+	m_treeHeight = m_tree.GetHeight();
+	m_heapCount = m_tree.m_maxHeapCount;
+	m_treeArea = m_tree.GetAreaRatio();
 
 	m_base = 0;
 }

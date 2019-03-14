@@ -236,6 +236,12 @@ inline dtVec dtCross(const dtVec& a, const dtVec& b)
 	return _mm_shuffle_ps(c, c, _MM_SHUFFLE(3, 0, 2, 1));
 }
 
+inline dtVec dtLength3(const dtVec& a)
+{
+	dtVec t = dtDot3(a, a);
+	return _mm_sqrt_ps(t);
+}
+
 inline dtVec dtNormalize3(const dtVec& v)
 {
 	dtVec length = _mm_sqrt_ps(dtDot3(v, v));
@@ -344,6 +350,11 @@ inline float dtArea(const dtAABB& a)
 inline dtVec dtCenter(const dtAABB& a)
 {
 	return dtSplat(0.5f) * (a.lowerBound + a.upperBound);
+}
+
+inline dtVec dtExtent(const dtAABB& a)
+{
+	return dtSplat(0.5f) * (a.upperBound - a.lowerBound);
 }
 
 struct dtFree

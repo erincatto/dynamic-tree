@@ -552,7 +552,9 @@ void dtTree::InsertLeafSAH(int leaf)
 	Validate();
 }
 
-void dtTree::InsertLeafBox2D(int leaf)
+int g_sameCount = 0;
+
+void dtTree::InsertLeafApproxSAH(int leaf)
 {
 	++m_insertionCount;
 
@@ -564,6 +566,16 @@ void dtTree::InsertLeafBox2D(int leaf)
 	}
 
 	dtAABB aabbL = m_nodes[leaf].aabb;
+
+	dtVec cL = dtCenter(aabbL);
+	dtVec hL = dtExtent(aabbL);
+
+	float directCost = dtArea(dtUnion(m_nodes[m_root].aabb, aabbL));
+	float inheritedCost = 0.0f;
+
+	int bestSibling = m_root;
+	float bestCost = directCost + inheritedCost;
+
 	float areaL = dtArea(aabbL);
 
 	// Stage 1: find the best sibling for this node
@@ -577,10 +589,16 @@ void dtTree::InsertLeafBox2D(int leaf)
 		float areaP2 = dtArea(dtUnion(m_nodes[index].aabb, aabbL));
 
 		// Cost of creating a new parent for this node P and the new leaf L
-		float Cp = areaP2;
+		float Cp = areaP2 + inheritedCost;
+
+		if (Cp < bestCost)
+		{
+			bestSibling = index;
+			bestCost = Cp;
+		}
 
 		// Inheritance cost seen by children
-		float deltaAreaP = areaP2 - areaP1;
+		inheritedCost += areaP2 - areaP1;
 
 		// Cost of descending into child 1
 		float C1;
@@ -589,15 +607,22 @@ void dtTree::InsertLeafBox2D(int leaf)
 			// Child 1 is a leaf
 			// Cost of creating new node and increasing area of node P
 			float directCost = dtArea(dtUnion(aabbL, m_nodes[child1].aabb));
-			C1 = deltaAreaP + directCost;
+			C1 = directCost + inheritedCost;
+
+			// Need this here due to while condition above
+			if (C1 < bestCost)
+			{
+				bestSibling = child1;
+				bestCost = C1;
+			}
 		}
 		else
 		{
 			// Child 1 is an internal node
-			// Estimate cost of inserting under child 1
+			// Lower bound cost of inserting under child 1
 			float deltaArea1 = dtArea(dtUnion(aabbL, m_nodes[child1].aabb)) - dtArea(m_nodes[child1].aabb);
 			float directCost = areaL;
-			C1 = deltaAreaP + deltaArea1 + directCost;
+			C1 = directCost + inheritedCost + deltaArea1;
 		}
 
 		// Cost of descending into child 2
@@ -607,28 +632,39 @@ void dtTree::InsertLeafBox2D(int leaf)
 			// Child 2 is a leaf
 			// Cost of creating new node and increasing area of node P
 			float directCost = dtArea(dtUnion(aabbL, m_nodes[child2].aabb));
-			C2 = deltaAreaP + directCost;
+			C2 = directCost + inheritedCost;
+
+			// Need this here due to while condition above
+			if (C2 < bestCost)
+			{
+				bestSibling = child2;
+				bestCost = C2;
+			}
 		}
 		else
 		{
 			// Child 2 is an internal node
-			// Estimate cost of inserting under child 2
+			// Lower bound cost of inserting under child 2
 			float deltaArea2 = dtArea(dtUnion(aabbL, m_nodes[child2].aabb)) - dtArea(m_nodes[child2].aabb);
 			float directCost = areaL;
-			C2 = deltaAreaP + deltaArea2 + directCost;
+			C2 = directCost + inheritedCost + deltaArea2 ;
 		}
 
-		if (dtAbs(C1 - C2) < 0.0001f)
+		// Can the cost possibly be decreased?
+		if (bestCost < C1 && bestCost < C2)
 		{
-			C1 += 0.0f;
-		}
-
-		// Descend according to the minimum cost. Use a bias to reduce tree height.
-		float bias = 1.0f;
-		if (bias * Cp < C1 && bias * Cp < C2)
-		{
-			// Found best sibling is P
+			// Found best sibling
 			break;
+		}
+
+		if (dtAbs(C1 - C2) < 0.001f * areaL)
+		{
+			dtVec c = dtCenter(aabbL);
+			dtVec d1 = dtCenter(m_nodes[child1].aabb) - c;
+			dtVec d2 = dtCenter(m_nodes[child2].aabb) - c;
+			C1 = dtGetX(dtDot3(d1, d1));
+			C2 = dtGetX(dtDot3(d2, d2));
+			++g_sameCount;
 		}
 
 		// Descend
@@ -642,7 +678,7 @@ void dtTree::InsertLeafBox2D(int leaf)
 		}
 	}
 
-	int sibling = index;
+	int sibling = bestSibling;
 
 	// Stage 2: create a new parent
 	int oldParent = m_nodes[sibling].parent;
@@ -691,7 +727,7 @@ void dtTree::InsertLeafBox2D(int leaf)
 		m_nodes[index].height = 1 + dtMax(m_nodes[child1].height, m_nodes[child2].height);
 		m_nodes[index].aabb = dtUnion(m_nodes[child1].aabb, m_nodes[child2].aabb);
 
-		if (m_heuristic == dt_box2d_rotate)
+		if (m_heuristic == dt_approx_sah_rotate)
 		{
 			Rotate(index);
 		}
@@ -814,9 +850,9 @@ void dtTree::InsertLeaf(int leaf)
 		InsertLeafBittner(leaf);
 		return;
 
-	case dt_box2d:
-	case dt_box2d_rotate:
-		InsertLeafBox2D(leaf);
+	case dt_approx_sah:
+	case dt_approx_sah_rotate:
+		InsertLeafApproxSAH(leaf);
 		return;
 
 	case dt_manhattan:

@@ -21,7 +21,7 @@ struct Test
 	virtual const char* GetName() const = 0;
 	virtual void CreateBoxes() = 0;
 	
-	void Create(dtTreeHeuristic heuristic);
+	void Create(dtInsertionHeuristic heuristic);
 	void Allocate(int count);
 	void Destroy();
 	virtual void Update(Draw& draw, int reinsertIter, int shuffleIter);
@@ -36,4 +36,10 @@ struct Test
 	dtTree m_tree;
 	int m_base;
 	float m_buildTime;
+
+	int m_proxyCount = 0;
+	int m_nodeCount = 0;
+	int m_treeHeight = 0;
+	int m_heapCount = 0;
+	float m_treeArea = 0.0f;
 };

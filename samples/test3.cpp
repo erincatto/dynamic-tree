@@ -26,11 +26,11 @@ struct Test3 : Test
 	Test3()
 	{
 		m_fileIndex = 0;
-		m_fileNames[0] = "BlizzardLandTree";
-		m_fileNames[1] = "BlizzardLandEditorTree";
-		m_fileNames[2] = "GibraltarTree";
-		m_fileNames[3] = "HimalayasTree";
-		m_fileNames[4] = "MexicoTree";
+		m_fileNames[0] = "BlizzardLand";
+		m_fileNames[1] = "BlizzardLandEditor";
+		m_fileNames[2] = "Gibraltar";
+		m_fileNames[3] = "Himalayas";
+		m_fileNames[4] = "Mexico";
 		m_fileNames[5] = "BlizzardLandDynamic";
 		m_fileNames[6] = "BlizzardLandKinematic";
 		m_fileNames[7] = "BlizzardLandStatic";
@@ -128,7 +128,7 @@ struct Test3 : Test
 
 		if (ImGui::Combo("File", &m_fileIndex, m_fileNames, e_fileCount))
 		{
-			dtTreeHeuristic heuristic = m_tree.m_heuristic;
+			dtInsertionHeuristic heuristic = m_tree.m_heuristic;
 			Destroy();
 			Create(heuristic);
 		}

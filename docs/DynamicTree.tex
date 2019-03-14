@@ -261,27 +261,6 @@ Tree rotations can be applied to deal with sorted input. In Stage 3 of leaf inse
 	\end{algorithmic}
 \end{algorithm}
 
-\section{Results}
-Results are generated using the open source library \emph{dynamic-tree}~\cite{Catto2019}.
-
-Results are compared using the \emph{surface area ratio} (SAR). This is a non-dimensional number that compares the area of the internal nodes to the area of the root node. Let $T$ be the set of internal nodes excluding the root node, then:
-\begin{equation}
-	SAR = \frac{\sum_{i \in T} SA(i)}{SA(root)}
-\end{equation}
-
-Algorithm~\ref{alg:stage3} produces a balanced binary tree for sorted input. The input of Figure~\ref{fig:tile_based} produces the tree shown in Figure~\ref{fig:sort_balanced}.
-
-\begin{figure}
-	\begin{center}
-		\includesvg[pretex=\small, width=0.8\textwidth]{images/sort_balanced}
-	\end{center}
-	\caption{Balanced tree produced using tree rotations during the refit phase of leaf insertion.}
-	\label{fig:sort_balanced}
-\end{figure}
-
-\section{Conclusion}
-
-\section{Subtree Rotations}
 
 Consider a game world with many identical geometric objects in a row as shown in Figure~\ref{fig:tile_based}. Such configurations are common in games, especially in tile-based or voxel-based game worlds. The dynamic tree is built by inserting objects from left to right. The resulting tree is shown in Figure~\ref{fig:linked_list}. This is an undesirable tree because it is has the form of a linked list and the height of the tree is equal to the number of objects. Using an area of 1 for the AABB of each game object, the tree a total internal node area of 35. A balanced tree shown in Figure~\ref{fig:balanced} has a total internal node area of 24.
 
@@ -316,6 +295,27 @@ There are similar formulas for the other rotations. There are a total of 5 possi
 Rotations are introduced to the insertion algorithm in Stage 3. While ascending the tree, rotations are applied at each node that has two levels below (has grandchildren). This is done after the node's height and AABB are updated.
 
 Using the modified Stage 3 with rotations applied to the case of Figure~\ref{fig:tile_based} leads directly to the balanced tree of Figure~\ref{fig:balanced}.
+
+\section{Results}
+Results are generated using the open source library \emph{dynamic-tree}~\cite{Catto2019}.
+
+Results are compared using the \emph{surface area ratio} (SAR). This is a non-dimensional number that compares the area of the internal nodes to the area of the root node. Let $T$ be the set of internal nodes excluding the root node, then:
+\begin{equation}
+	SAR = \frac{\sum_{i \in T} SA(i)}{SA(root)}
+\end{equation}
+
+Algorithm~\ref{alg:stage3} produces a balanced binary tree for sorted input. The input of Figure~\ref{fig:tile_based} produces the tree shown in Figure~\ref{fig:sort_balanced}.
+
+\begin{figure}
+	\begin{center}
+		\includesvg[pretex=\small, width=0.8\textwidth]{images/sort_balanced}
+	\end{center}
+	\caption{Balanced tree produced using tree rotations during the refit phase of leaf insertion.}
+	\label{fig:sort_balanced}
+\end{figure}
+
+\section{Conclusion}
+
 
 \section{Object Movement}
 
