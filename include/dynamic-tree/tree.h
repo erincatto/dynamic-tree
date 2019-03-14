@@ -124,6 +124,8 @@ struct dtTree
 	void InsertLeafManhattan(int leaf);
 	void RemoveLeaf(int leaf);
 
+	int SiblingApproxSAH(const dtAABB & aabbL);
+	int SiblingApproxSAH2(const dtAABB & aabbL);
 	void Rotate(int index);
 
 	void Optimize(int iterations);

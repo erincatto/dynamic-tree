@@ -15,7 +15,7 @@
 #include <algorithm>
 #include <assert.h>
 
-#define DT_VALIDATE 1
+#define DT_VALIDATE 0
 
 dtTree::dtTree()
 {
@@ -554,28 +554,15 @@ void dtTree::InsertLeafSAH(int leaf)
 
 int g_sameCount = 0;
 
-#if 1
-void dtTree::InsertLeafApproxSAH(int leaf)
+int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 {
-	++m_insertionCount;
-
-	if (m_root == dt_nullNode)
-	{
-		m_root = leaf;
-		m_nodes[m_root].parent = dt_nullNode;
-		return;
-	}
-
-	dtAABB aabbL = m_nodes[leaf].aabb;
-
-	dtVec cL = dtCenter(aabbL);
-	dtVec hL = dtExtent(aabbL);
+	dtVec centerL = dtCenter(aabbL);
 
 	float directCost = dtArea(dtUnion(m_nodes[m_root].aabb, aabbL));
 	float inheritedCost = 0.0f;
 
 	int bestSibling = m_root;
-	float bestCost = directCost + inheritedCost;
+	float bestCost = directCost;
 
 	float areaL = dtArea(aabbL);
 
@@ -660,9 +647,8 @@ void dtTree::InsertLeafApproxSAH(int leaf)
 
 		if (dtAbs(C1 - C2) < 0.001f * areaL)
 		{
-			dtVec c = dtCenter(aabbL);
-			dtVec d1 = dtCenter(m_nodes[child1].aabb) - c;
-			dtVec d2 = dtCenter(m_nodes[child2].aabb) - c;
+			dtVec d1 = dtCenter(m_nodes[child1].aabb) - centerL;
+			dtVec d2 = dtCenter(m_nodes[child2].aabb) - centerL;
 			C1 = dtGetX(dtDot3(d1, d1));
 			C2 = dtGetX(dtDot3(d2, d2));
 			++g_sameCount;
@@ -679,7 +665,23 @@ void dtTree::InsertLeafApproxSAH(int leaf)
 		}
 	}
 
-	int sibling = bestSibling;
+	return bestSibling;
+}
+
+#if 1
+void dtTree::InsertLeafApproxSAH(int leaf)
+{
+	++m_insertionCount;
+
+	if (m_root == dt_nullNode)
+	{
+		m_root = leaf;
+		m_nodes[m_root].parent = dt_nullNode;
+		return;
+	}
+
+	dtAABB aabbL = m_nodes[leaf].aabb;
+	int sibling = SiblingApproxSAH(aabbL);
 
 	// Stage 2: create a new parent
 	int oldParent = m_nodes[sibling].parent;
@@ -716,7 +718,7 @@ void dtTree::InsertLeafApproxSAH(int leaf)
 	}
 
 	// Stage 3: walk back up the tree fixing heights and AABBs
-	index = m_nodes[leaf].parent;
+	int index = m_nodes[leaf].parent;
 	while (index != dt_nullNode)
 	{
 		int child1 = m_nodes[index].child1;
