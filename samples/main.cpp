@@ -64,7 +64,7 @@ namespace
 	int g_testCount = 0;
 	Test* g_test = nullptr;
 
-	dtInsertionHeuristic g_heuristic = dt_sah;
+	dtInsertionHeuristic g_heuristic = dt_approx_sah;
 	bool g_drawInternal = true;
 
 	int g_reinsertIter = 0;
@@ -475,7 +475,7 @@ int main(int, char**)
 
 		UpdateCamera();
 
-		//InitTest(g_settings.m_testIndex);
+		InitTest(g_settings.m_testIndex);
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();

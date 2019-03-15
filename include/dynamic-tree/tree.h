@@ -124,8 +124,10 @@ struct dtTree
 	void InsertLeafManhattan(int leaf);
 	void RemoveLeaf(int leaf);
 
-	int SiblingApproxSAH(const dtAABB & aabbL);
-	int SiblingApproxSAH2(const dtAABB & aabbL);
+	float SiblingCost(const dtAABB& aabbL, int sibling);
+	int SiblingApproxSAH(const dtAABB& aabbL);
+	int SiblingApproxSAH2(const dtAABB& aabbL);
+	int SiblingApproxSAH3(const dtAABB& aabbL);
 	void Rotate(int index);
 
 	void Optimize(int iterations);

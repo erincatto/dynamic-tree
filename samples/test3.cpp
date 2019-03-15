@@ -25,7 +25,7 @@ struct Test3 : Test
 
 	Test3()
 	{
-		m_fileIndex = 0;
+		m_fileIndex = 1;
 		m_fileNames[0] = "BlizzardLand";
 		m_fileNames[1] = "BlizzardLandEditor";
 		m_fileNames[2] = "Gibraltar";

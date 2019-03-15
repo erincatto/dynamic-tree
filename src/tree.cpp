@@ -552,6 +552,25 @@ void dtTree::InsertLeafSAH(int leaf)
 	Validate();
 }
 
+float dtTree::SiblingCost(const dtAABB& aabbL, int sibling)
+{
+	assert(0 <= sibling && sibling < m_nodeCapacity);
+	const dtNode& node = m_nodes[sibling];
+
+	float directCost = dtArea(dtUnion(node.aabb, aabbL));
+	float cost = directCost;
+
+	int parent = node.parent;
+	while (parent != dt_nullNode)
+	{
+		const dtNode& n = m_nodes[parent];
+		cost += dtArea(dtUnion(n.aabb, aabbL)) - dtArea(n.aabb);
+		parent = n.parent;
+	}
+
+	return cost;
+}
+
 int g_sameCount = 0;
 
 int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
@@ -668,7 +687,257 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 	return bestSibling;
 }
 
-#if 1
+int dtTree::SiblingApproxSAH2(const dtAABB& aabbL)
+{
+	dtVec centerL = dtCenter(aabbL);
+
+	float directCost = dtArea(dtUnion(m_nodes[m_root].aabb, aabbL));
+	float inheritedCost = 0.0f;
+
+	int bestSibling = m_root;
+	float bestCost = directCost;
+
+	float areaL = dtArea(aabbL);
+
+	// Stage 1: find the best sibling for this node
+	int index = m_root;
+	while (m_nodes[index].isLeaf == false)
+	{
+		int child1 = m_nodes[index].child1;
+		int child2 = m_nodes[index].child2;
+
+		float areaP1 = dtArea(m_nodes[index].aabb);
+		float areaP2 = directCost;
+
+		// Cost of creating a new parent for this node P and the new leaf L
+		float Cp = areaP2 + inheritedCost;
+
+		if (Cp < bestCost)
+		{
+			bestSibling = index;
+			bestCost = Cp;
+		}
+
+		// Inheritance cost seen by children
+		inheritedCost += areaP2 - areaP1;
+
+		// Cost of descending into child 1
+		float C1;
+		float directCost1;
+		if (m_nodes[child1].isLeaf)
+		{
+			// Child 1 is a leaf
+			// Cost of creating new node and increasing area of node P
+			directCost1 = dtArea(dtUnion(m_nodes[child1].aabb, aabbL));
+			C1 = directCost1 + inheritedCost;
+
+			// Need this here due to while condition above
+			if (C1 < bestCost)
+			{
+				bestSibling = child1;
+				bestCost = C1;
+			}
+		}
+		else
+		{
+			// Child 1 is an internal node
+			// Lower bound cost of inserting under child 1
+			directCost1 = dtArea(dtUnion(m_nodes[child1].aabb, aabbL));
+			float deltaArea1 = directCost1 - dtArea(m_nodes[child1].aabb);
+			C1 = areaL + inheritedCost + deltaArea1;
+		}
+
+		// Cost of descending into child 2
+		float C2;
+		float directCost2;
+		if (m_nodes[child2].isLeaf)
+		{
+			// Child 2 is a leaf
+			// Cost of creating new node and increasing area of node P
+			directCost2 = dtArea(dtUnion(m_nodes[child2].aabb, aabbL));
+			C2 = directCost2 + inheritedCost;
+
+			// Need this here due to while condition above
+			if (C2 < bestCost)
+			{
+				bestSibling = child2;
+				bestCost = C2;
+			}
+		}
+		else
+		{
+			// Child 2 is an internal node
+			// Lower bound cost of inserting under child 2
+			directCost2 = dtArea(dtUnion(m_nodes[child2].aabb, aabbL));
+			float deltaArea2 = directCost2 - dtArea(m_nodes[child2].aabb);
+			C2 = areaL + inheritedCost + deltaArea2;
+		}
+
+		// Can the cost possibly be decreased?
+		if (bestCost < C1 && bestCost < C2)
+		{
+			// Found best sibling
+			break;
+		}
+
+		if (dtAbs(C1 - C2) < 0.001f * areaL)
+		{
+			dtVec d1 = dtCenter(m_nodes[child1].aabb) - centerL;
+			dtVec d2 = dtCenter(m_nodes[child2].aabb) - centerL;
+			C1 = dtGetX(dtDot3(d1, d1));
+			C2 = dtGetX(dtDot3(d2, d2));
+			++g_sameCount;
+		}
+
+		// Descend
+		if (C1 < C2)
+		{
+			index = child1;
+			directCost = directCost1;
+		}
+		else
+		{
+			index = child2;
+			directCost = directCost2;
+		}
+	}
+
+	return bestSibling;
+}
+
+int dtTree::SiblingApproxSAH3(const dtAABB& aabbL)
+{
+	dtVec centerL = dtCenter(aabbL);
+
+	float areaBase = dtArea(m_nodes[m_root].aabb);
+	float directCost = dtArea(dtUnion(m_nodes[m_root].aabb, aabbL));
+	float inheritedCost = 0.0f;
+
+	int bestSibling = m_root;
+	float bestCost = directCost;
+
+	float areaL = dtArea(aabbL);
+
+	// Stage 1: find the best sibling for this node
+	int index = m_root;
+	while (m_nodes[index].isLeaf == false)
+	{
+		int child1 = m_nodes[index].child1;
+		int child2 = m_nodes[index].child2;
+
+		float areaP1 = areaBase;
+		float areaP2 = directCost;
+
+		// Cost of creating a new parent for this node P and the new leaf L
+		float Cp = areaP2 + inheritedCost;
+
+		if (Cp < bestCost)
+		{
+			bestSibling = index;
+			bestCost = Cp;
+		}
+
+		// Inheritance cost seen by children
+		inheritedCost += areaP2 - areaP1;
+
+		// Cost of descending into child 1
+		float C1;
+		float directCost1;
+		float area1 = 0.0f;
+		if (m_nodes[child1].isLeaf)
+		{
+			// Child 1 is a leaf
+			// Cost of creating new node and increasing area of node P
+			directCost1 = dtArea(dtUnion(m_nodes[child1].aabb, aabbL));
+			C1 = directCost1 + inheritedCost;
+
+			// Need this here due to while condition above
+			if (C1 < bestCost)
+			{
+				bestSibling = child1;
+				bestCost = C1;
+			}
+		}
+		else
+		{
+			// Child 1 is an internal node
+			area1 = dtArea(m_nodes[child1].aabb);
+			directCost1 = dtArea(dtUnion(m_nodes[child1].aabb, aabbL));
+			float deltaArea1 = directCost1 - area1;
+
+			// Lower bound cost of inserting under child 1
+			C1 = areaL + inheritedCost + deltaArea1;
+		}
+
+		// Cost of descending into child 2
+		float C2;
+		float directCost2;
+		float area2 = 0.0f;
+		if (m_nodes[child2].isLeaf)
+		{
+			// Child 2 is a leaf
+			// Cost of creating new node and increasing area of node P
+			directCost2 = dtArea(dtUnion(m_nodes[child2].aabb, aabbL));
+			C2 = directCost2 + inheritedCost;
+
+			// Need this here due to while condition above
+			if (C2 < bestCost)
+			{
+				bestSibling = child2;
+				bestCost = C2;
+			}
+		}
+		else
+		{
+			// Child 2 is an internal node
+			area2 = dtArea(m_nodes[child2].aabb);
+			directCost2 = dtArea(dtUnion(m_nodes[child2].aabb, aabbL));
+			float deltaArea2 = directCost2 - area2;
+
+			// Lower bound cost of inserting under child 2
+			C2 = areaL + inheritedCost + deltaArea2;
+		}
+
+		// Can the cost possibly be decreased?
+		if (bestCost < C1 && bestCost < C2)
+		{
+			// Found best sibling
+			break;
+		}
+
+		if (C1 == C2)
+		{
+			dtVec d1 = dtCenter(m_nodes[child1].aabb) - centerL;
+			dtVec d2 = dtCenter(m_nodes[child2].aabb) - centerL;
+			C1 = dtGetX(dtDot3(d1, d1));
+			C2 = dtGetX(dtDot3(d2, d2));
+			++g_sameCount;
+		}
+
+		// Descend
+		if (C1 < C2)
+		{
+			index = child1;
+			areaBase = area1;
+			directCost = directCost1;
+		}
+		else
+		{
+			index = child2;
+			areaBase = area2;
+			directCost = directCost2;
+		}
+	}
+
+	float cost = SiblingCost(aabbL, bestSibling);
+	if (cost != bestCost)
+	{
+		cost += 0.0f;
+	}
+
+	return bestSibling;
+}
+
 void dtTree::InsertLeafApproxSAH(int leaf)
 {
 	++m_insertionCount;
@@ -681,7 +950,13 @@ void dtTree::InsertLeafApproxSAH(int leaf)
 	}
 
 	dtAABB aabbL = m_nodes[leaf].aabb;
-	int sibling = SiblingApproxSAH(aabbL);
+	int sibling = SiblingApproxSAH3(aabbL);
+	//int sibling3 = SiblingApproxSAH3(aabbL);
+
+	//if (sibling != sibling3)
+	//{
+	//	sibling3 += 0;
+	//}
 
 	// Stage 2: create a new parent
 	int oldParent = m_nodes[sibling].parent;
@@ -741,8 +1016,8 @@ void dtTree::InsertLeafApproxSAH(int leaf)
 	Validate();
 }
 
-#else
 
+#if 0
 void dtTree::InsertLeafApproxSAH(int leaf)
 {
 	++m_insertionCount;
