@@ -574,6 +574,7 @@ float dtTree::SiblingCost(const dtAABB& aabbL, int sibling)
 int g_earlyOut = 0;
 int g_sameCount = 0;
 
+// TODO_ERIN try ball tree cheap online algorithm
 int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 {
 	dtVec centerL = dtCenter(aabbL);
