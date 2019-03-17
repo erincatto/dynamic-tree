@@ -475,7 +475,7 @@ int main(int, char**)
 
 		UpdateCamera();
 
-		InitTest(g_settings.m_testIndex);
+		//InitTest(g_settings.m_testIndex);
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();

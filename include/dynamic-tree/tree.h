@@ -126,8 +126,6 @@ struct dtTree
 
 	float SiblingCost(const dtAABB& aabbL, int sibling);
 	int SiblingApproxSAH(const dtAABB& aabbL);
-	int SiblingApproxSAH2(const dtAABB& aabbL);
-	int SiblingApproxSAH3(const dtAABB& aabbL);
 	void Rotate(int index);
 
 	void Optimize(int iterations);
