@@ -60,8 +60,6 @@ namespace
 	int g_width = 1280;
 	int g_height = 720;
 
-	Test* g_tests[128];
-	int g_testCount = 0;
 	Test* g_test = nullptr;
 
 	dtInsertionHeuristic g_heuristic = dt_approx_sah;
@@ -80,17 +78,7 @@ static void glfwErrorCallback(int error, const char* description)
 
 static void InitTestArray()
 {
-	extern Test* g_test1;
-	extern Test* g_test2;
-	extern Test* g_test3;
-	extern Test* g_test4;
-
-	g_tests[0] = g_test1;
-	g_tests[1] = g_test2;
-	g_tests[2] = g_test3;
-	g_tests[3] = g_test4;
 	std::sort(g_tests, g_tests + g_testCount, CompareTests);
-	g_testCount = 4;
 }
 
 static void InitTest(int index)
@@ -280,7 +268,9 @@ static void DrawUI()
 			if (ImGui::Button("Quit"))
 			{
 				glfwSetWindowShouldClose(g_window, GL_TRUE);
-			}			ImGui::EndTabItem();
+			}
+			
+			ImGui::EndTabItem();
 		}
 
 		if (g_testCount == 0)

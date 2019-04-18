@@ -8,4 +8,4 @@ svg-inkscape/
 *.pdf
 *.out
 build/
-
+.vscode/

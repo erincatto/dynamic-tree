@@ -143,4 +143,4 @@ struct Test3 : Test
 };
 
 static Test3 s_test;
-Test* g_test3 = &s_test;
+static int testIndex = RegisterTest(&s_test);

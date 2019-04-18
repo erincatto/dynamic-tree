@@ -43,3 +43,9 @@ struct Test
 	int m_heapCount = 0;
 	float m_treeArea = 0.0f;
 };
+
+int RegisterTest(Test* test);
+
+static const int s_maxTests = 128;
+extern Test* g_tests[s_maxTests];
+extern int g_testCount;
