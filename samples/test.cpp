@@ -142,3 +142,19 @@ void Test::RebuildBottomUp()
 
 	m_base = 0;
 }
+
+Test* g_tests[s_maxTests] = { nullptr };
+int g_testCount = 0;
+
+int RegisterTest(Test* test)
+{
+	int index = g_testCount;
+	if (index < s_maxTests)
+	{
+		g_tests[index] = test;
+		++g_testCount;
+		return index;
+	}
+
+	return -1;
+}

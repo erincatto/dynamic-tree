@@ -41,4 +41,4 @@ struct Test2 : Test
 };
 
 static Test2 s_test;
-Test* g_test2 = &s_test;
+static int testIndex = RegisterTest(&s_test);
