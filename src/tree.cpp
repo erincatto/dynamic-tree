@@ -123,6 +123,7 @@ int dtTree::AllocateNode()
 	// Peel a node off the free list.
 	int nodeId = m_freeList;
 	m_freeList = m_nodes[nodeId].next;
+	m_nodes[nodeId].objectIndex = -1;
 	m_nodes[nodeId].parent = dt_nullNode;
 	m_nodes[nodeId].child1 = dt_nullNode;
 	m_nodes[nodeId].child2 = dt_nullNode;
@@ -574,8 +575,8 @@ float dtTree::SiblingCost(const dtAABB& aabbL, int sibling)
 int g_earlyOut = 0;
 int g_sameCount = 0;
 
-// TODO_ERIN try ball tree cheap online algorithm
-int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
+//
+int dtTree::SiblingApproxSAH(const dtAABB& aabbL, std::vector<int>& path, float& cost)
 {
 	dtVec centerL = dtCenter(aabbL);
 
@@ -588,7 +589,6 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 
 	float areaL = dtArea(aabbL);
 
-	// Stage 1: find the best sibling for this node
 	int index = m_root;
 	while (m_nodes[index].isLeaf == false)
 	{
@@ -597,7 +597,7 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 
 		// Cost of creating a new parent for this node P and the new leaf L
 		float Cp = directCost + inheritedCost;
-		if (Cp < bestCost)
+		if (Cp <= bestCost)
 		{
 			bestSibling = index;
 			bestCost = Cp;
@@ -618,7 +618,7 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 			float C1 = directCost1 + inheritedCost;
 
 			// Need this here due to while condition above
-			if (C1 < bestCost)
+			if (C1 <= bestCost)
 			{
 				bestSibling = child1;
 				bestCost = C1;
@@ -648,7 +648,7 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 			float C2 = directCost2 + inheritedCost;
 
 			// Need this here due to while condition above
-			if (C2 < bestCost)
+			if (C2 <= bestCost)
 			{
 				bestSibling = child2;
 				bestCost = C2;
@@ -667,7 +667,7 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 		}
 
 		// Can the cost possibly be decreased?
-		if (bestCost < lowerC1 && bestCost < lowerC2)
+		if (bestCost <= lowerC1 && bestCost <= lowerC2)
 		{
 			// Found best sibling
 			++g_earlyOut;
@@ -686,7 +686,7 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 		}
 
 		// Descend
-		if (lowerC1 < lowerC2)
+		if (lowerC1 < lowerC2 && m_nodes[child1].isLeaf == false)
 		{
 			index = child1;
 			areaBase = area1;
@@ -698,6 +698,8 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 			areaBase = area2;
 			directCost = directCost2;
 		}
+
+		path.push_back(index);
 	}
 
 	//float cost = SiblingCost(aabbL, bestSibling);
@@ -706,6 +708,79 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 	//	cost += 0.0f;
 	//}
 
+	cost = bestCost;
+	return bestSibling;
+}
+
+int dtTree::SiblingApproxOmohundro(const dtAABB& aabbL, std::vector<int>& path, float& cost)
+{
+	float directCost = dtArea(dtUnion(m_nodes[m_root].aabb, aabbL));
+	float inheritedCost = 0.0f;
+
+	int bestSibling = m_root;
+	float bestCost = directCost;
+
+	float areaL = dtArea(aabbL);
+	dtVec centerL = dtCenter(aabbL);
+
+	int index = m_root;
+	while (m_nodes[index].isLeaf == false)
+	{
+		const dtNode& n = m_nodes[index];
+		inheritedCost += directCost - dtArea(n.aabb);
+
+		// modification: add areaL
+		if (inheritedCost + areaL >= bestCost)
+		{
+			break;
+		}
+
+		const dtNode& child1 = m_nodes[n.child1];
+		const dtNode& child2 = m_nodes[n.child2];
+
+		float directCost1 = dtArea(dtUnion(child1.aabb, aabbL));
+		float directCost2 = dtArea(dtUnion(child2.aabb, aabbL));
+
+		if (inheritedCost + directCost1 < bestCost)
+		{
+			bestSibling = n.child1;
+			bestCost = inheritedCost + directCost1;
+		}
+
+		if (inheritedCost + directCost2 < bestCost)
+		{
+			bestSibling = n.child2;
+			bestCost = inheritedCost + directCost2;
+		}
+
+		float delta1 = directCost1 - dtArea(child1.aabb);
+		float delta2 = directCost2 - dtArea(child2.aabb);
+
+		// modification: deal with indecision
+		//if (delta1 == 0.0f && delta2 == 0.0f)
+		//{
+		//	dtVec d1 = dtCenter(child1.aabb) - centerL;
+		//	dtVec d2 = dtCenter(child2.aabb) - centerL;
+		//	delta1 = dtGetX(dtDot3(d1, d1));
+		//	delta2 = dtGetX(dtDot3(d2, d2));
+		//}
+
+		// modification: check for leaf
+		if (delta1 <= delta2 && child1.isLeaf == false)
+		{
+			directCost = directCost1;
+			index = n.child1;
+		}
+		else
+		{
+			directCost = directCost2;
+			index = n.child2;
+		}
+
+		path.push_back(index);
+	}
+
+	cost = bestCost;
 	return bestSibling;
 }
 
@@ -721,7 +796,15 @@ void dtTree::InsertLeafApproxSAH(int leaf)
 	}
 
 	dtAABB aabbL = m_nodes[leaf].aabb;
-	int sibling = SiblingApproxSAH(aabbL);
+	std::vector<int> path1, path2;
+	float cost1, cost2;
+	int sibling2 = SiblingApproxSAH(aabbL, path1, cost1);
+	int sibling = SiblingApproxOmohundro(aabbL, path2, cost2);
+
+	if (sibling != sibling2)
+	{
+		sibling += 0;
+	}
 
 	// Stage 2: create a new parent
 	int oldParent = m_nodes[sibling].parent;

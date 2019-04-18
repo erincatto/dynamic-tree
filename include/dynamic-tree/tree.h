@@ -125,7 +125,8 @@ struct dtTree
 	void RemoveLeaf(int leaf);
 
 	float SiblingCost(const dtAABB& aabbL, int sibling);
-	int SiblingApproxSAH(const dtAABB& aabbL);
+	int SiblingApproxSAH(const dtAABB& aabbL, std::vector<int>& path, float& cost);
+	int SiblingApproxOmohundro(const dtAABB& aabbL, std::vector<int>& path, float& cost);
 	void Rotate(int index);
 
 	void Optimize(int iterations);
