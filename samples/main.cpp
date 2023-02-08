@@ -490,7 +490,6 @@ int main(int, char**)
 			g_draw.DrawString(5.0f, 35.0f, buffer);
 		}
 
-		Color color(0.3f, 0.3f, 0.8f);
 		for (int i = 0; i < g_test->m_tree.m_nodeCapacity; ++i)
 		{
 			dtNode& n = g_test->m_tree.m_nodes[i];

@@ -37,6 +37,21 @@ inline int dtAbs(int a)
 	return a > 0 ? a : -a;
 }
 
+inline float dtMin(float a, float b)
+{
+	return a < b ? a : b;
+}
+
+inline float dtMax(float a, float b)
+{
+	return a > b ? a : b;
+}
+
+inline float dtClamp(float a, float b, float c)
+{
+	return a < b ? b : (c < a ? c : a);
+}
+
 inline float dtAbs(float a)
 {
 	return a > 0.0f ? a : -a;

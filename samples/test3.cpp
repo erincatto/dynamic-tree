@@ -101,6 +101,8 @@ struct Test3 : Test
 
 		fclose(file);
 
+		//vertexCount = dtMin(24, vertexCount);
+
 		Allocate(vertexCount / 2);
 
 		for (int i = 0; i < m_count; ++i)

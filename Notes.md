@@ -53,3 +53,11 @@ With Rotations
 Greedy: area = 5259, build time = 1.4ms
 Branch and Bound: area = 4960, build time = 4.4ms
 
+Links:
+https://jacco.ompf2.com/
+https://meistdan.github.io/publications/bvh_star/paper.pdf
+
+
+SAH1 30.33 (35) 3.82 (26)
+SAH2 30.98 (45) 3.80 (30)
+
