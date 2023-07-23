@@ -622,13 +622,13 @@ dtCost dtTree::MinCost(int index, const dtAABB& box)
 // The cost for cases 1, 2a, and 3a can be computed using the sibling cost formula.
 // cost of sibling H = area(union(H, D)) + increased are of ancestors
 
-// Suppose B is an internal node, then the lowest cost would be one of two cases:
+// Suppose B (or C) is an internal node, then the lowest cost would be one of two cases:
 // case1: D becomes a sibling of B
 // case2: D becomes a decendent of B along with a new internal node of area(D).
-int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
+int dtTree::SiblingApproxSAH(const dtAABB& boxD)
 {
-	dtVec centerL = dtCenter(aabbL);
-	float areaL = dtArea(aabbL);
+	dtVec centerD = dtCenter(boxD);
+	float areaD = dtArea(boxD);
 
 	dtAABB rootBox = m_nodes[m_root].aabb;
 
@@ -636,12 +636,13 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 	float areaBase = dtArea(rootBox);
 
 	// Area of inflated node
-	float directCost = dtArea(dtUnion(rootBox, aabbL));
+	float directCost = dtArea(dtUnion(rootBox, boxD));
 	float inheritedCost = 0.0f;
 
 	int bestSibling = m_root;
 	float bestCost = directCost;
 
+	// Decend the tree from root, following a single greedy path.
 	int index = m_root;
 	while (m_nodes[index].isLeaf == false)
 	{
@@ -668,7 +669,7 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 		// Cost of descending into child 1
 		float lowerCost1 = FLT_MAX;
 		dtAABB box1 = m_nodes[child1].aabb;
-		float directCost1 = dtArea(dtUnion(box1, aabbL));
+		float directCost1 = dtArea(dtUnion(box1, boxD));
 		float area1 = 0.0f;
 		if (leaf1)
 		{
@@ -687,13 +688,12 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 		{
 			// Child 1 is an internal node
 			area1 = dtArea(box1);
-			float deltaArea1 = directCost1 - area1;
 
 			// Lower bound cost of inserting under child 1.
-			lowerCost1 = inheritedCost + directCost1 + dtMin(areaL - area1, 0.0f);
-			//lowerCost1 = inheritedCost + deltaArea1 + areaL;
+			lowerCost1 = inheritedCost + directCost1 + dtMin(areaD - area1, 0.0f);
 
-			//dtCost test1 = MinCost(child1, aabbL);
+			// Validation of lower bound
+			//dtCost test1 = MinCost(child1, boxD);
 			//if (test1.cost < lowerCost1)
 			//{
 			//	test1.cost += 0.0f;
@@ -703,7 +703,7 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 		// Cost of descending into child 2
 		float lowerCost2 = FLT_MAX;
 		dtAABB box2 = m_nodes[child2].aabb;
-		float directCost2 = dtArea(dtUnion(box2, aabbL));
+		float directCost2 = dtArea(dtUnion(box2, boxD));
 		float area2 = 0.0f;
 		if (leaf2)
 		{
@@ -722,14 +722,13 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 		{
 			// Child 2 is an internal node
 			area2 = dtArea(box2);
-			float deltaArea2 = directCost2 - area2;
 
 			// Lower bound cost of inserting under child 2. This is not the cost
 			// of child 2, it is the best we can hope for under child 2.
-			lowerCost2 = inheritedCost + directCost2 + dtMin(areaL - area2, 0.0f);
-			//lowerCost2 = inheritedCost + deltaArea2 + areaL;
+			lowerCost2 = inheritedCost + directCost2 + dtMin(areaD - area2, 0.0f);
 
-			//dtCost test2 = MinCost(child2, aabbL);
+			// Validation of lower bound
+			//dtCost test2 = MinCost(child2, boxD);
 			//if (test2.cost < lowerCost2)
 			//{
 			//	test2.cost += 0.0f;
@@ -755,8 +754,8 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 
 			// No clear choice based on lower bound surface area. This can happen when both
 			// children fully contain L. Fallback to node distance.
-			dtVec d1 = dtCenter(box1) - centerL;
-			dtVec d2 = dtCenter(box2) - centerL;
+			dtVec d1 = dtCenter(box1) - centerD;
+			dtVec d2 = dtCenter(box2) - centerD;
 			lowerCost1 = dtGetX(dtDot3(d1, d1));
 			lowerCost2 = dtGetX(dtDot3(d2, d2));
 			++g_sameCount;
@@ -779,124 +778,15 @@ int dtTree::SiblingApproxSAH(const dtAABB& aabbL)
 		assert(m_nodes[index].isLeaf == false);
 	}
 
-	float cost = SiblingCost(aabbL, bestSibling);
-	if (cost != bestCost)
-	{
-		cost += 0.0f;
-	}
+	// Validation of cost
+	//float cost = SiblingCost(boxD, bestSibling);
+	//if (cost != bestCost)
+	//{
+	//	cost += 0.0f;
+	//}
 
 	return bestSibling;
 }
-
-#if 0
-// this is essentially the same as before
-int dtTree::SiblingApproxSAH2(const dtAABB& aabbL)
-{
-	if (m_nodes[m_root].isLeaf)
-	{
-		return m_root;
-	}
-
-	dtVec centerL = dtCenter(aabbL);
-	float areaL = dtArea(aabbL);
-
-	float bestCost = FLT_MAX;
-	int bestSibling = dt_nullNode;
-
-	float parentCost = 0.0f;
-	int index = m_root;
-	float newNodeArea = dtArea(dtUnion(m_nodes[m_root].aabb, aabbL));
-	for (;;)
-	{
-		float cost = parentCost + newNodeArea;
-		if (cost < bestCost)
-		{
-			bestCost = cost;
-			bestSibling = index;
-		}
-
-		if (m_nodes[index].isLeaf)
-		{
-			break;
-		}
-
-		parentCost += newNodeArea - dtArea(m_nodes[index].aabb);
-
-		int child1 = m_nodes[index].child1;
-		int child2 = m_nodes[index].child2;
-		float newNodeArea1 = dtArea(dtUnion(m_nodes[child1].aabb, aabbL));
-		float newNodeArea2 = dtArea(dtUnion(m_nodes[child2].aabb, aabbL));
-
-		float cost1, cost2;
-		if (m_nodes[child1].isLeaf)
-		{
-			cost1 = newNodeArea1;
-		}
-		else
-		{
-			cost1 = newNodeArea1 - dtArea(m_nodes[child1].aabb) + areaL;
-		}
-
-		if (m_nodes[child2].isLeaf)
-		{
-			cost2 = newNodeArea2;
-		}
-		else
-		{
-			cost2 = newNodeArea2 - dtArea(m_nodes[child2].aabb) + areaL;
-		}
-
-		if (cost1 < cost2)
-		{
-			index = child1;
-			newNodeArea = newNodeArea1;
-		}
-		else if (cost2 < cost1)
-		{
-			index = child2;
-			newNodeArea = newNodeArea2;
-		}
-		else
-		{
-			// No clear choice based on surface area. This can happen when both
-			// children fully contain L. Fallback to node distance.
-			dtVec d1 = dtCenter(m_nodes[child1].aabb) - centerL;
-			dtVec d2 = dtCenter(m_nodes[child2].aabb) - centerL;
-			float distSqr1 = dtGetX(dtDot3(d1, d1));
-			float distSqr2 = dtGetX(dtDot3(d2, d2));
-
-			if (distSqr1 < distSqr2)
-			{
-				index = child1;
-				newNodeArea = newNodeArea1;
-			}
-			else
-			{
-				index = child2;
-				newNodeArea = newNodeArea2;
-			}
-		}
-	}
-
-	// Validate cost
-#if defined(_DEBUG)
-	constexpr float rtol = 1e-5f;
-	constexpr float atol = 100.0f * FLT_EPSILON;
-	float cost = dtArea(dtUnion(m_nodes[bestSibling].aabb, aabbL));
-	int parent = m_nodes[bestSibling].parent;
-	while (parent != dt_nullNode)
-	{
-		cost += dtArea(dtUnion(m_nodes[parent].aabb, aabbL)) - dtArea(m_nodes[parent].aabb);
-		parent = m_nodes[parent].parent;
-	}
-
-	float diff = dtAbs(cost - bestCost);
-	assert(diff < rtol * cost + atol);
-#endif
-
-	return bestSibling;
-}
-#endif
 
 int dtTree::SiblingApproxOmohundro(const dtAABB& aabbL, std::vector<int>& path, float& cost)
 {
@@ -2146,6 +2036,7 @@ struct dtTreePlane
 	int rightCount;
 };
 
+// TODO_ERIN this is slower than incremental with rotations. It should be faster.
 void dtTree::BuildTopDownSAH(int* proxies, dtAABB* boxes, int count)
 {
 	free(m_nodes);
