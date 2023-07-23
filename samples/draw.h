@@ -24,15 +24,6 @@ struct Camera
 	const dtVec GetRight() const;
 	const dtVec GetForward() const;
 
-	void SetYaw(float radians);
-	float GetYaw() const;
-
-	void SetPitch(float radians);
-	float GetPitch() const;
-
-	const dtVec GetPosition() const;
-	void SetPosition(dtVec position);
-
 	// Update position and rotation
 	void Update();
 

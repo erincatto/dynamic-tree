@@ -55,6 +55,12 @@ struct dtCandidateNode
 	float inheritanceCost;
 };
 
+struct dtCost
+{
+	int node;
+	float cost;
+};
+
 /// A dynamic AABB tree broad-phase, inspired by Nathanael Presson's btDbvt.
 /// A dynamic tree arranges data in a binary tree to accelerate
 /// queries such as volume queries and ray casts. Leafs are proxies
@@ -124,8 +130,11 @@ struct dtTree
 	void InsertLeafManhattan(int leaf);
 	void RemoveLeaf(int leaf);
 
+	dtCost MinCost(int index, const dtAABB& box);
+
 	float SiblingCost(const dtAABB& aabbL, int sibling);
-	int SiblingApproxSAH(const dtAABB& aabbL, std::vector<int>& path, float& cost);
+	int SiblingApproxSAH(const dtAABB& aabbL);
+	//int SiblingApproxSAH2(const dtAABB& aabbL);
 	int SiblingApproxOmohundro(const dtAABB& aabbL, std::vector<int>& path, float& cost);
 	void Rotate(int index);
 
